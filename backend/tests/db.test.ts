@@ -91,5 +91,3 @@ describe('no_overlapping_bookings exclusion constraint (behavioral)', () => {
     expect(cancelledOverlap.rows).toHaveLength(1);
   });
 });
-
-afterAll(() => pool.end());
