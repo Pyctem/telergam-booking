@@ -3,9 +3,13 @@ import { Link } from 'react-router-dom';
 import { getServices } from '../../api/services';
 
 export function ServicesList() {
-  const { data: services, isLoading, error } = useQuery({ queryKey: ['services'], queryFn: getServices });
+  const { data: services, isPending, error } = useQuery({ queryKey: ['services'], queryFn: getServices });
 
-  if (isLoading) return <p>Загрузка...</p>;
+  // isPending (not isLoading) is the correct "no data yet" check in React Query v5:
+  // isLoading is isPending && isFetching, so it drops to false during a failed
+  // query's retry-backoff delay even though there's still no data — services!
+  // would then crash. isPending stays true for that whole window.
+  if (isPending) return <p>Загрузка...</p>;
   if (error) return <p>Не удалось загрузить услуги</p>;
 
   return (
