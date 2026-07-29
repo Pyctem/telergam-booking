@@ -46,7 +46,7 @@ export function SelectSlot() {
       <div>
         {slots?.length === 0 && <p>Нет свободных слотов на эту дату</p>}
         {slots?.map((slot) => {
-          const label = DateTime.fromISO(slot.startsAt, { zone: 'utc' }).toFormat('HH:mm');
+          const label = DateTime.fromISO(slot.startsAt).setZone('Europe/Moscow').toFormat('HH:mm');
           return (
             <button key={slot.startsAt} onClick={() => pickSlot(slot.startsAt)}>
               {label}

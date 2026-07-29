@@ -36,7 +36,7 @@ describe('SelectSlot', () => {
     vi.spyOn(servicesApi, 'getServices').mockResolvedValue([
       { id: 1, name: 'Haircut', description: null, price: 1500, durationMinutes: 30, isActive: true },
     ]);
-    vi.spyOn(slotsApi, 'getSlots').mockResolvedValue([{ startsAt: '2099-01-01T09:00:00.000Z' }]);
+    vi.spyOn(slotsApi, 'getSlots').mockResolvedValue([{ startsAt: '2099-01-01T06:00:00.000Z' }]);
     const queryClient = new QueryClient();
 
     render(
@@ -53,6 +53,8 @@ describe('SelectSlot', () => {
       </QueryClientProvider>
     );
 
+    // 06:00 UTC is 09:00 in Europe/Moscow (UTC+3, no DST) — this proves the
+    // label is converted to the business's local timezone, not left in raw UTC.
     const slotButton = await screen.findByRole('button', { name: /09:00/ });
     fireEvent.click(slotButton);
 

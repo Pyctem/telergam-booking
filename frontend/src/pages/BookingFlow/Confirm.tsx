@@ -30,7 +30,6 @@ export function Confirm() {
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
         setError('Этот слот только что заняли, выберите другое время');
-        navigate(-1);
       } else {
         setError('Не удалось создать запись, попробуйте ещё раз');
       }
