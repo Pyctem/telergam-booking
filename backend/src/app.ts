@@ -6,6 +6,7 @@ import { validateInitDataMiddleware } from './middleware/validateInitData.js';
 import { servicesRouter } from './routes/services.js';
 import { adminServicesRouter } from './routes/admin/services.js';
 import { slotsRouter } from './routes/slots.js';
+import { bookingsRouter } from './routes/bookings.js';
 import { requireAdminMiddleware } from './middleware/requireAdmin.js';
 
 // Global error handler. Express identifies this as error-handling middleware
@@ -36,6 +37,8 @@ export function createApp() {
   app.use('/api/services', validateInitDataMiddleware, servicesRouter);
 
   app.use('/api/slots', validateInitDataMiddleware, slotsRouter);
+
+  app.use('/api/bookings', validateInitDataMiddleware, bookingsRouter);
 
   app.use(
     '/api/admin/services',
