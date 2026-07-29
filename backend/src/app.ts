@@ -8,6 +8,8 @@ import { adminServicesRouter } from './routes/admin/services.js';
 import { slotsRouter } from './routes/slots.js';
 import { bookingsRouter } from './routes/bookings.js';
 import { requireAdminMiddleware } from './middleware/requireAdmin.js';
+import { adminBookingsRouter } from './routes/admin/bookings.js';
+import { adminSettingsRouter } from './routes/admin/settings.js';
 
 // Global error handler. Express identifies this as error-handling middleware
 // by its 4-argument signature. Combined with `express-async-errors` (imported
@@ -45,6 +47,20 @@ export function createApp() {
     validateInitDataMiddleware,
     requireAdminMiddleware,
     adminServicesRouter
+  );
+
+  app.use(
+    '/api/admin/bookings',
+    validateInitDataMiddleware,
+    requireAdminMiddleware,
+    adminBookingsRouter
+  );
+
+  app.use(
+    '/api/admin/settings',
+    validateInitDataMiddleware,
+    requireAdminMiddleware,
+    adminSettingsRouter
   );
 
   app.use(errorHandler);
