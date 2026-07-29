@@ -44,11 +44,14 @@ adminServicesRouter.post('/', async (req, res) => {
 const updateServiceSchema = createServiceSchema.partial();
 
 adminServicesRouter.patch('/:id', async (req, res) => {
+  const id = Number(req.params.id);
+  if (Number.isNaN(id)) {
+    return res.status(400).json({ error: 'Invalid service id' });
+  }
   const parsed = updateServiceSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error.flatten() });
   }
-  const id = Number(req.params.id);
   const fields = parsed.data;
   const updates: string[] = [];
   const values: unknown[] = [];
@@ -65,6 +68,9 @@ adminServicesRouter.patch('/:id', async (req, res) => {
 
 adminServicesRouter.delete('/:id', async (req, res) => {
   const id = Number(req.params.id);
+  if (Number.isNaN(id)) {
+    return res.status(400).json({ error: 'Invalid service id' });
+  }
   await pool.query('UPDATE services SET is_active = false WHERE id = $1', [id]);
   res.status(204).end();
 });
