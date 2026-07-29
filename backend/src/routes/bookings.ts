@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { pool } from '../db.js';
 import { createBooking } from '../services/bookingService.js';
+import { notifyBookingCreated } from '../services/telegramNotify.js';
 
 export const bookingsRouter = Router();
 
@@ -32,6 +33,10 @@ bookingsRouter.post('/', async (req, res) => {
   }
 
   res.status(201).json(result.booking);
+
+  const settingsResult = await pool.query('SELECT owner_chat_id FROM business_settings WHERE id = 1');
+  const ownerChatId = settingsResult.rows[0]?.owner_chat_id ?? null;
+  void notifyBookingCreated(result.booking, req.user!.telegramId, ownerChatId ? Number(ownerChatId) : null);
 });
 
 bookingsRouter.get('/my', async (req, res) => {
