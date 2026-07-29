@@ -34,9 +34,23 @@ bookingsRouter.post('/', async (req, res) => {
 
   res.status(201).json(result.booking);
 
-  const settingsResult = await pool.query('SELECT owner_chat_id FROM business_settings WHERE id = 1');
-  const ownerChatId = settingsResult.rows[0]?.owner_chat_id ?? null;
-  void notifyBookingCreated(result.booking, req.user!.telegramId, ownerChatId ? Number(ownerChatId) : null);
+  // Fire-and-forget notification work, isolated in its own async IIFE so a
+  // failure here (e.g. the settings lookup) can never surface as a rejected
+  // promise reaching Express's error-forwarding machinery after the response
+  // has already been sent (see errorHandler's headersSent guard in app.ts
+  // for defense-in-depth). The client notification must still fire even if
+  // the owner lookup fails.
+  void (async () => {
+    let ownerChatId: number | null = null;
+    try {
+      const settingsResult = await pool.query('SELECT owner_chat_id FROM business_settings WHERE id = 1');
+      const rawOwnerChatId = settingsResult.rows[0]?.owner_chat_id;
+      ownerChatId = rawOwnerChatId !== null && rawOwnerChatId !== undefined ? Number(rawOwnerChatId) : null;
+    } catch (err) {
+      console.error('Failed to fetch owner_chat_id for booking notification', err);
+    }
+    await notifyBookingCreated(result.booking, req.user!.telegramId, ownerChatId);
+  })();
 });
 
 bookingsRouter.get('/my', async (req, res) => {

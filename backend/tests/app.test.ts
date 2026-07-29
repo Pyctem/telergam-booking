@@ -42,4 +42,31 @@ describe('async error handling safety net', () => {
     expect(res.body).toEqual({ error: 'Internal server error' });
     expect(JSON.stringify(res.body)).not.toContain('boom');
   });
+
+  it('does not attempt a second response when the error occurs after headers are already sent', async () => {
+    // Reproduces the bug this test guards against: a route that has already
+    // sent its response (e.g. a fire-and-forget block that throws after
+    // `res.json()`) and then produces a rejected promise that
+    // express-async-errors forwards to this middleware. Before the
+    // `res.headersSent` guard, errorHandler would call `res.status()` /
+    // `res.json()` a second time, which throws ERR_HTTP_HEADERS_SENT from
+    // inside the error-handling middleware itself. With the guard, it
+    // delegates to Express's built-in default error handler via next(err)
+    // instead, so the request still completes cleanly with the original
+    // response and no second write is attempted.
+    const testApp = express();
+    testApp.get('/post-response-boom', async (_req, res) => {
+      res.json({ ok: true });
+      throw new Error('post-response boom - must not crash the error handler');
+    });
+    testApp.use(errorHandler);
+
+    const res = await request(testApp).get('/post-response-boom');
+
+    // The original response (sent before the throw) is what the client
+    // actually receives; errorHandler must not have overwritten it or thrown
+    // while trying to.
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ ok: true });
+  });
 });

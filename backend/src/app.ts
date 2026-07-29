@@ -18,7 +18,15 @@ import { adminSettingsRouter } from './routes/admin/settings.js';
 // crashing the process on an unhandled rejection. Exported so tests can wire
 // it up standalone against a throwaway route to prove the safety net works
 // without relying on internal route-registration order in `createApp()`.
-export function errorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction) {
+export function errorHandler(err: unknown, _req: Request, res: Response, next: NextFunction) {
+  // If a response was already sent (e.g. an error occurs in fire-and-forget
+  // work that runs after `res.json()`), we can't send another one — calling
+  // res.status()/res.json() again throws ERR_HTTP_HEADERS_SENT from inside
+  // this handler. Express's own docs recommend delegating to the built-in
+  // default error handler in that case, which just closes the connection.
+  if (res.headersSent) {
+    return next(err);
+  }
   console.error(err);
   res.status(500).json({ error: 'Internal server error' });
 }
