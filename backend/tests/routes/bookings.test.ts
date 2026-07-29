@@ -73,4 +73,12 @@ describe('/api/bookings', () => {
       .set('Authorization', authHeaderFor(2));
     expect(cancelRes.status).toBe(404);
   });
+
+  it('rejects a non-numeric booking id with 400 instead of a 500', async () => {
+    const app = createApp();
+    const cancelRes = await request(app)
+      .patch('/api/bookings/abc/cancel')
+      .set('Authorization', authHeaderFor(1));
+    expect(cancelRes.status).toBe(400);
+  });
 });

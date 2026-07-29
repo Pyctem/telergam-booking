@@ -57,6 +57,9 @@ bookingsRouter.get('/my', async (req, res) => {
 
 bookingsRouter.patch('/:id/cancel', async (req, res) => {
   const id = Number(req.params.id);
+  if (Number.isNaN(id)) {
+    return res.status(400).json({ error: 'Invalid booking id' });
+  }
   const result = await pool.query(
     `UPDATE bookings SET status = 'cancelled' WHERE id = $1 AND user_id = $2 AND status = 'confirmed' RETURNING id`,
     [id, req.user!.id]
