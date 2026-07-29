@@ -3,6 +3,9 @@ import 'express-async-errors';
 import cors from 'cors';
 import { config } from './config.js';
 import { validateInitDataMiddleware } from './middleware/validateInitData.js';
+import { servicesRouter } from './routes/services.js';
+import { adminServicesRouter } from './routes/admin/services.js';
+import { requireAdminMiddleware } from './middleware/requireAdmin.js';
 
 // Global error handler. Express identifies this as error-handling middleware
 // by its 4-argument signature. Combined with `express-async-errors` (imported
@@ -28,6 +31,15 @@ export function createApp() {
   app.get('/api/whoami', validateInitDataMiddleware, (req, res) => {
     res.json(req.user);
   });
+
+  app.use('/api/services', validateInitDataMiddleware, servicesRouter);
+
+  app.use(
+    '/api/admin/services',
+    validateInitDataMiddleware,
+    requireAdminMiddleware,
+    adminServicesRouter
+  );
 
   app.use(errorHandler);
 
