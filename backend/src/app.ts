@@ -1,7 +1,20 @@
-import express from 'express';
+import express, { type NextFunction, type Request, type Response } from 'express';
+import 'express-async-errors';
 import cors from 'cors';
 import { config } from './config.js';
 import { validateInitDataMiddleware } from './middleware/validateInitData.js';
+
+// Global error handler. Express identifies this as error-handling middleware
+// by its 4-argument signature. Combined with `express-async-errors` (imported
+// above, before any routes are registered), any rejected promise from an
+// async route/middleware handler is forwarded here automatically instead of
+// crashing the process on an unhandled rejection. Exported so tests can wire
+// it up standalone against a throwaway route to prove the safety net works
+// without relying on internal route-registration order in `createApp()`.
+export function errorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction) {
+  console.error(err);
+  res.status(500).json({ error: 'Internal server error' });
+}
 
 export function createApp() {
   const app = express();
@@ -15,6 +28,8 @@ export function createApp() {
   app.get('/api/whoami', validateInitDataMiddleware, (req, res) => {
     res.json(req.user);
   });
+
+  app.use(errorHandler);
 
   return app;
 }
