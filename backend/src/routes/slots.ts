@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { DateTime } from 'luxon';
 import { pool } from '../db.js';
 import { generateSlots } from '../lib/slotGenerator.js';
 import type { WorkingHours } from '../types.js';
@@ -29,10 +30,13 @@ slotsRouter.get('/', async (req, res) => {
   const settingsResult = await pool.query('SELECT * FROM business_settings WHERE id = 1');
   const settings = settingsResult.rows[0];
 
+  const dayStart = DateTime.fromISO(date, { zone: settings.timezone }).startOf('day');
+  const dayEnd = dayStart.plus({ days: 1 });
+
   const bookingsResult = await pool.query(
     `SELECT starts_at, ends_at FROM bookings
-     WHERE status = 'confirmed' AND starts_at::date = $1::date`,
-    [date]
+     WHERE status = 'confirmed' AND starts_at >= $1 AND starts_at < $2`,
+    [dayStart.toUTC().toISO(), dayEnd.toUTC().toISO()]
   );
 
   const slots = generateSlots({
