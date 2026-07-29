@@ -1,0 +1,72 @@
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter } from 'react-router-dom';
+import { MyBookings } from '../../src/pages/MyBookings/MyBookings';
+import * as bookingsApi from '../../src/api/bookings';
+
+function availableFn<T extends (...args: never[]) => unknown>(impl?: T) {
+  const fn = vi.fn(impl);
+  return Object.assign(fn, { isAvailable: () => true });
+}
+
+vi.mock('../../src/api/bookings');
+vi.mock('@telegram-apps/sdk-react', () => ({
+  backButton: {
+    mount: availableFn(),
+    isMounted: vi.fn(() => false),
+    show: availableFn(),
+    hide: availableFn(),
+    onClick: availableFn(),
+    offClick: availableFn(),
+  },
+}));
+
+describe('MyBookings', () => {
+  it('lists bookings and cancels a confirmed one on button click', async () => {
+    vi.spyOn(bookingsApi, 'getMyBookings').mockResolvedValue([
+      {
+        id: 1, userId: 1, serviceId: 1, serviceName: 'Haircut',
+        startsAt: '2099-01-01T09:00:00.000Z', endsAt: '2099-01-01T09:30:00.000Z',
+        status: 'confirmed', createdAt: '2098-01-01T00:00:00.000Z',
+      },
+    ]);
+    const cancelMock = vi.spyOn(bookingsApi, 'cancelBooking').mockResolvedValue({ ok: true });
+    const queryClient = new QueryClient();
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <MyBookings />
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+
+    await waitFor(() => expect(screen.getByText('Haircut')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /отменить/i }));
+
+    await waitFor(() => expect(cancelMock).toHaveBeenCalledWith(1));
+  });
+
+  it('does not show a cancel button for an already cancelled booking', async () => {
+    vi.spyOn(bookingsApi, 'getMyBookings').mockResolvedValue([
+      {
+        id: 2, userId: 1, serviceId: 1, serviceName: 'Haircut',
+        startsAt: '2020-01-01T09:00:00.000Z', endsAt: '2020-01-01T09:30:00.000Z',
+        status: 'cancelled', createdAt: '2019-01-01T00:00:00.000Z',
+      },
+    ]);
+    const queryClient = new QueryClient();
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <MyBookings />
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+
+    await waitFor(() => expect(screen.getByText('Haircut')).toBeInTheDocument());
+    expect(screen.queryByRole('button', { name: /отменить/i })).not.toBeInTheDocument();
+  });
+});
