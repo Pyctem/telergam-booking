@@ -4,6 +4,7 @@ import { ServicesList } from './pages/ServicesList/ServicesList';
 import { SelectSlot } from './pages/BookingFlow/SelectSlot';
 import { Confirm } from './pages/BookingFlow/Confirm';
 import { MyBookings } from './pages/MyBookings/MyBookings';
+import { AdminLayout } from './pages/Admin/AdminLayout';
 import { useTelegramTheme } from './hooks/useTelegramTheme';
 
 const queryClient = new QueryClient();
@@ -18,6 +19,7 @@ export function App() {
           <Route path="/booking/:serviceId" element={<SelectSlot />} />
           <Route path="/booking/:serviceId/confirm" element={<Confirm />} />
           <Route path="/my-bookings" element={<MyBookings />} />
+          <Route path="/admin" element={<AdminLayout />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>
