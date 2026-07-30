@@ -161,7 +161,19 @@ export function SelectSlot() {
                   type="button"
                   mode="outline"
                   onClick={() => pickSlot(slot.startsAt)}
-                  style={{ WebkitAppearance: 'none', appearance: 'none', background: 'transparent' }}
+                  style={{
+                    // Labels are always "HH:mm" (5 chars), but a chip that
+                    // sizes to content still varies slightly between them —
+                    // most fonts render "1" narrower than digits like "0" or
+                    // "9", so e.g. "11:30" comes out visibly thinner than
+                    // "09:00" without an explicit fixed width.
+                    justifyContent: 'center',
+                    width: 64,
+                    boxSizing: 'border-box',
+                    WebkitAppearance: 'none',
+                    appearance: 'none',
+                    background: 'transparent',
+                  }}
                 >
                   {label}
                 </Chip>
