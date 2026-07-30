@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
+import { List, Section, Cell, Banner, Placeholder, Spinner } from '@telegram-apps/telegram-ui';
 import { getServices } from '../../api/services';
 import { createBooking } from '../../api/bookings';
 import { getWhoAmI } from '../../api/user';
@@ -40,17 +41,30 @@ export function Confirm() {
 
   useMainButton({ text: 'Записаться', onClick: handleConfirm, enabled: Boolean(service) });
 
-  if (!service || settingsPending || !settings) return <p>Загрузка...</p>;
+  if (!service || settingsPending || !settings) {
+    return (
+      <Placeholder header="Загрузка...">
+        <Spinner size="m" />
+      </Placeholder>
+    );
+  }
 
   const dt = DateTime.fromISO(startsAt, { zone: 'utc' }).setZone(settings.timezone);
 
   return (
     <div>
-      <h1>{service.name}</h1>
-      {me?.firstName && <p>Записываем: {me.firstName}</p>}
-      <p>{dt.toFormat('dd.MM.yyyy')} в {dt.toFormat('HH:mm')}</p>
-      <p>{service.price} ₽ · {service.durationMinutes} мин</p>
-      {error && <p role="alert">{error}</p>}
+      <List>
+        <Section header={service.name}>
+          {me?.firstName && <Cell subtitle="Записываем">{me.firstName}</Cell>}
+          <Cell subtitle="Дата и время">{`${dt.toFormat('dd.MM.yyyy')} в ${dt.toFormat('HH:mm')}`}</Cell>
+          <Cell subtitle="Стоимость">{`${service.price} ₽ · ${service.durationMinutes} мин`}</Cell>
+        </Section>
+      </List>
+      {error && (
+        <div role="alert">
+          <Banner type="inline" header={error} />
+        </div>
+      )}
     </div>
   );
 }

@@ -1,7 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, waitFor, act } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { screen, waitFor, act } from '@testing-library/react';
+import { QueryClient } from '@tanstack/react-query';
+import { Route, Routes } from 'react-router-dom';
+import { renderWithProviders } from '../testUtils';
 import { Confirm } from '../../src/pages/BookingFlow/Confirm';
 import * as servicesApi from '../../src/api/services';
 import * as bookingsApi from '../../src/api/bookings';
@@ -51,18 +52,15 @@ describe('Confirm', () => {
     const queryClient = new QueryClient();
     const { mainButton } = await import('@telegram-apps/sdk-react');
 
-    render(
-      <QueryClientProvider client={queryClient}>
-        <MemoryRouter
-          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
-          initialEntries={['/booking/1/confirm?startsAt=2099-01-01T09%3A00%3A00.000Z']}
-        >
-          <Routes>
-            <Route path="/booking/:serviceId/confirm" element={<Confirm />} />
-            <Route path="/my-bookings" element={<div>My bookings screen</div>} />
-          </Routes>
-        </MemoryRouter>
-      </QueryClientProvider>
+    renderWithProviders(
+      <Routes>
+        <Route path="/booking/:serviceId/confirm" element={<Confirm />} />
+        <Route path="/my-bookings" element={<div>My bookings screen</div>} />
+      </Routes>,
+      {
+        queryClient,
+        initialEntries: ['/booking/1/confirm?startsAt=2099-01-01T09%3A00%3A00.000Z'],
+      }
     );
 
     await waitFor(() => expect(screen.getByText('Haircut')).toBeInTheDocument());
@@ -87,19 +85,16 @@ describe('Confirm', () => {
     const queryClient = new QueryClient();
     const { mainButton } = await import('@telegram-apps/sdk-react');
 
-    render(
-      <QueryClientProvider client={queryClient}>
-        <MemoryRouter
-          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
-          initialEntries={['/booking/1/confirm?startsAt=2099-01-01T09%3A00%3A00.000Z']}
-        >
-          <Routes>
-            <Route path="/booking/:serviceId/confirm" element={<Confirm />} />
-            <Route path="/booking/:serviceId" element={<div>Select slot screen</div>} />
-            <Route path="/my-bookings" element={<div>My bookings screen</div>} />
-          </Routes>
-        </MemoryRouter>
-      </QueryClientProvider>
+    renderWithProviders(
+      <Routes>
+        <Route path="/booking/:serviceId/confirm" element={<Confirm />} />
+        <Route path="/booking/:serviceId" element={<div>Select slot screen</div>} />
+        <Route path="/my-bookings" element={<div>My bookings screen</div>} />
+      </Routes>,
+      {
+        queryClient,
+        initialEntries: ['/booking/1/confirm?startsAt=2099-01-01T09%3A00%3A00.000Z'],
+      }
     );
 
     await waitFor(() => expect(screen.getByText('Haircut')).toBeInTheDocument());
