@@ -21,6 +21,12 @@ function authHeaderFor(telegramId: number): string {
 }
 
 describe('/api/admin/settings', () => {
+  it('rejects a non-admin user with 403', async () => {
+    const app = createApp();
+    const res = await request(app).get('/api/admin/settings').set('Authorization', authHeaderFor(1));
+    expect(res.status).toBe(403);
+  });
+
   it('reads then updates business settings', async () => {
     const app = createApp();
     const header = authHeaderFor(1);
