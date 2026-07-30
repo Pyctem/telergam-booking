@@ -2,10 +2,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
+import { Section, Chip, Placeholder, Spinner, Text } from '@telegram-apps/telegram-ui';
 import { getServices } from '../../api/services';
 import { getSlots } from '../../api/slots';
 import { useBackButton } from '../../hooks/useBackButton';
 import { useBusinessSettings } from '../../hooks/useBusinessSettings';
+import { generateCalendarWeeks } from '../../lib/calendarGrid';
+
+const WEEKDAY_LABELS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
 export function SelectSlot() {
   const { serviceId } = useParams<{ serviceId: string }>();
@@ -35,41 +39,80 @@ export function SelectSlot() {
     enabled: Boolean(serviceId) && selectedDate !== null,
   });
 
-  const dateOptions = useMemo(() => {
+  const weeks = useMemo(() => {
     if (!settings) return [];
-    const zone = settings.timezone;
-    return Array.from({ length: settings.bookingHorizonDays }, (_, i) =>
-      DateTime.now().setZone(zone).plus({ days: i }).toISODate()!
-    );
+    const today = DateTime.now().setZone(settings.timezone).toISODate()!;
+    return generateCalendarWeeks(today, settings.bookingHorizonDays);
   }, [settings]);
 
   function pickSlot(startsAt: string) {
     navigate(`/booking/${serviceId}/confirm?startsAt=${encodeURIComponent(startsAt)}`);
   }
 
-  if (settingsPending || selectedDate === null) return <p>Загрузка...</p>;
+  if (settingsPending || selectedDate === null) {
+    return (
+      <Placeholder header="Загрузка...">
+        <Spinner size="m" />
+      </Placeholder>
+    );
+  }
 
   return (
     <div>
-      <h1>{service?.name ?? 'Выбор времени'}</h1>
-      <div style={{ display: 'flex', gap: 8, overflowX: 'auto' }}>
-        {dateOptions.map((date) => (
-          <button key={date} onClick={() => setSelectedDate(date)} aria-pressed={date === selectedDate}>
-            {DateTime.fromISO(date).toFormat('dd.MM')}
-          </button>
+      <Text weight="2" style={{ display: 'block', padding: '12px 16px' }}>
+        {service?.name ?? 'Выбор времени'}
+      </Text>
+
+      <div style={{ padding: '0 16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 4 }}>
+          {WEEKDAY_LABELS.map((label) => (
+            <Text key={label} weight="3" style={{ textAlign: 'center', fontSize: 12, opacity: 0.6 }}>
+              {label}
+            </Text>
+          ))}
+        </div>
+        {weeks.map((week, weekIndex) => (
+          <div
+            key={weekIndex}
+            style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 4 }}
+          >
+            {week.map((day, dayIndex) =>
+              day === null ? (
+                <div key={dayIndex} />
+              ) : (
+                <Chip
+                  key={day.date}
+                  mode={day.date === selectedDate ? 'elevated' : 'outline'}
+                  aria-pressed={day.date === selectedDate}
+                  aria-disabled={!day.enabled}
+                  onClick={day.enabled ? () => setSelectedDate(day.date) : undefined}
+                  style={
+                    day.enabled
+                      ? { justifyContent: 'center' }
+                      : { justifyContent: 'center', opacity: 0.35, pointerEvents: 'none' }
+                  }
+                >
+                  {DateTime.fromISO(day.date).day}
+                </Chip>
+              )
+            )}
+          </div>
         ))}
       </div>
-      <div>
-        {slots?.length === 0 && <p>Нет свободных слотов на эту дату</p>}
-        {slots?.map((slot) => {
-          const label = DateTime.fromISO(slot.startsAt).setZone(settings!.timezone).toFormat('HH:mm');
-          return (
-            <button key={slot.startsAt} onClick={() => pickSlot(slot.startsAt)}>
-              {label}
-            </button>
-          );
-        })}
-      </div>
+
+      <Section header="Свободное время">
+        {slots?.length === 0 && <Placeholder description="Нет свободных слотов на эту дату" />}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: '0 16px 16px' }}>
+          {slots?.map((slot) => {
+            const label = DateTime.fromISO(slot.startsAt).setZone(settings!.timezone).toFormat('HH:mm');
+            return (
+              <Chip key={slot.startsAt} mode="outline" onClick={() => pickSlot(slot.startsAt)}>
+                {label}
+              </Chip>
+            );
+          })}
+        </div>
+      </Section>
     </div>
   );
 }
