@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { notifyBookingCreated } from '../../src/services/telegramNotify.js';
+import { config } from '../../src/config.js';
 import type { Booking } from '../../src/types.js';
 
 const booking: Booking = {
@@ -61,5 +62,37 @@ describe('notifyBookingCreated', () => {
 
     await expect(notifyBookingCreated(booking, 777, null, 'Europe/Moscow', 'Ivan')).resolves.toBeUndefined();
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('attaches a single web_app inline button pointing into the Mini App when FRONTEND_URL is set', async () => {
+    // A message with exactly one inline button gets that button surfaced
+    // directly on the chat's row in the chat list - this only fires for
+    // https URLs, which is why frontendUrl is unset (and this behavior
+    // skipped) in every other test/local dev.
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true }) });
+    vi.stubGlobal('fetch', fetchMock);
+    config.frontendUrl = 'https://example.vercel.app';
+
+    try {
+      await notifyBookingCreated(booking, 777, 999, 'Europe/Moscow', 'Ivan');
+
+      const [clientCall, ownerCall] = fetchMock.mock.calls;
+      const clientButton = JSON.parse(clientCall[1].body).reply_markup.inline_keyboard[0][0];
+      expect(clientButton).toEqual({ text: 'My Bookings', web_app: { url: 'https://example.vercel.app/my-bookings' } });
+      const ownerButton = JSON.parse(ownerCall[1].body).reply_markup.inline_keyboard[0][0];
+      expect(ownerButton).toEqual({ text: 'Admin Panel', web_app: { url: 'https://example.vercel.app/admin' } });
+    } finally {
+      config.frontendUrl = undefined;
+    }
+  });
+
+  it('omits reply_markup entirely when FRONTEND_URL is not set', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true }) });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await notifyBookingCreated(booking, 777, 999, 'Europe/Moscow', 'Ivan');
+
+    const [clientCall] = fetchMock.mock.calls;
+    expect(JSON.parse(clientCall[1].body).reply_markup).toBeUndefined();
   });
 });

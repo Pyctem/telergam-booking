@@ -11,4 +11,8 @@ export const config = {
   databaseUrl: requireEnv('DATABASE_URL'),
   port: Number(process.env.PORT ?? 3001),
   corsOrigin: process.env.CORS_ORIGIN ?? '*',
+  // Optional: when set, booking notifications include a web_app button
+  // linking back into the Mini App. Must be an https URL — Telegram
+  // rejects web_app buttons otherwise — so it's left unset in local dev.
+  frontendUrl: process.env.FRONTEND_URL,
 };
