@@ -147,7 +147,7 @@ export function SelectSlot() {
         {slots?.length === 0 ? (
           <Placeholder description="No available slots for this date" />
         ) : (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: '0 16px 16px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: 16 }}>
             {slots?.map((slot) => {
               const label = DateTime.fromISO(slot.startsAt).setZone(settings!.timezone).toFormat('HH:mm');
               return (
