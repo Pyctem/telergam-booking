@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { SelectSlot } from '../../src/pages/BookingFlow/SelectSlot';
 import * as slotsApi from '../../src/api/slots';
 import * as servicesApi from '../../src/api/services';
+import * as settingsApi from '../../src/api/settings';
 
 function availableFn<T extends (...args: never[]) => unknown>(impl?: T) {
   const fn = vi.fn(impl);
@@ -13,6 +14,7 @@ function availableFn<T extends (...args: never[]) => unknown>(impl?: T) {
 
 vi.mock('../../src/api/slots');
 vi.mock('../../src/api/services');
+vi.mock('../../src/api/settings');
 vi.mock('@telegram-apps/sdk-react', () => ({
   mainButton: {
     mount: availableFn(),
@@ -37,6 +39,7 @@ describe('SelectSlot', () => {
       { id: 1, name: 'Haircut', description: null, price: 1500, durationMinutes: 30, isActive: true },
     ]);
     vi.spyOn(slotsApi, 'getSlots').mockResolvedValue([{ startsAt: '2099-01-01T06:00:00.000Z' }]);
+    vi.spyOn(settingsApi, 'getSettings').mockResolvedValue({ timezone: 'Europe/Moscow', bookingHorizonDays: 14 });
     const queryClient = new QueryClient();
 
     render(
@@ -59,5 +62,33 @@ describe('SelectSlot', () => {
     fireEvent.click(slotButton);
 
     await waitFor(() => expect(screen.getByText('Confirm screen')).toBeInTheDocument());
+  });
+
+  it('renders one date-picker button per day of the fetched booking horizon, not a hardcoded count', async () => {
+    vi.spyOn(servicesApi, 'getServices').mockResolvedValue([
+      { id: 1, name: 'Haircut', description: null, price: 1500, durationMinutes: 30, isActive: true },
+    ]);
+    vi.spyOn(slotsApi, 'getSlots').mockResolvedValue([]);
+    // A distinct, non-14 value proves the count tracks the fetched setting
+    // rather than the old hardcoded DAYS_AHEAD = 14 constant.
+    vi.spyOn(settingsApi, 'getSettings').mockResolvedValue({ timezone: 'Europe/Moscow', bookingHorizonDays: 3 });
+    const queryClient = new QueryClient();
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+          initialEntries={['/booking/1']}
+        >
+          <Routes>
+            <Route path="/booking/:serviceId" element={<SelectSlot />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+
+    await waitFor(() => expect(screen.getByText('Нет свободных слотов на эту дату')).toBeInTheDocument());
+    // No slots means the only buttons on screen are the date-picker buttons.
+    expect(screen.getAllByRole('button')).toHaveLength(3);
   });
 });

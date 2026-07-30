@@ -6,6 +6,7 @@ import { Confirm } from '../../src/pages/BookingFlow/Confirm';
 import * as servicesApi from '../../src/api/services';
 import * as bookingsApi from '../../src/api/bookings';
 import * as userApi from '../../src/api/user';
+import * as settingsApi from '../../src/api/settings';
 import { ApiError } from '../../src/api/client';
 
 function availableFn<T extends (...args: never[]) => unknown>(impl?: T) {
@@ -16,6 +17,7 @@ function availableFn<T extends (...args: never[]) => unknown>(impl?: T) {
 vi.mock('../../src/api/services');
 vi.mock('../../src/api/bookings');
 vi.mock('../../src/api/user');
+vi.mock('../../src/api/settings');
 vi.mock('@telegram-apps/sdk-react', () => ({
   mainButton: {
     mount: availableFn(),
@@ -40,6 +42,7 @@ describe('Confirm', () => {
       { id: 1, name: 'Haircut', description: null, price: 1500, durationMinutes: 30, isActive: true },
     ]);
     vi.spyOn(userApi, 'getWhoAmI').mockResolvedValue({ id: 1, telegramId: 10, role: 'client', firstName: 'Ann' });
+    vi.spyOn(settingsApi, 'getSettings').mockResolvedValue({ timezone: 'Europe/Moscow', bookingHorizonDays: 14 });
     const createBookingMock = vi.spyOn(bookingsApi, 'createBooking').mockResolvedValue({
       id: 1, userId: 1, serviceId: 1, serviceName: 'Haircut',
       startsAt: '2099-01-01T09:00:00.000Z', endsAt: '2099-01-01T09:30:00.000Z',
@@ -79,6 +82,7 @@ describe('Confirm', () => {
       { id: 1, name: 'Haircut', description: null, price: 1500, durationMinutes: 30, isActive: true },
     ]);
     vi.spyOn(userApi, 'getWhoAmI').mockResolvedValue({ id: 1, telegramId: 10, role: 'client', firstName: 'Ann' });
+    vi.spyOn(settingsApi, 'getSettings').mockResolvedValue({ timezone: 'Europe/Moscow', bookingHorizonDays: 14 });
     vi.spyOn(bookingsApi, 'createBooking').mockRejectedValue(new ApiError(409, 'Slot already booked'));
     const queryClient = new QueryClient();
     const { mainButton } = await import('@telegram-apps/sdk-react');

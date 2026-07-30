@@ -1,11 +1,30 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 import { getAdminBookings } from '../../api/admin';
+import { useBusinessSettings } from '../../hooks/useBusinessSettings';
 
 export function AdminBookings() {
-  const [date, setDate] = useState(() => DateTime.now().toISODate()!);
-  const { data: bookings } = useQuery({ queryKey: ['adminBookings', date], queryFn: () => getAdminBookings(date) });
+  const { data: settings, isPending: settingsPending } = useBusinessSettings();
+
+  // Same reasoning as SelectSlot: "today" depends on the business's
+  // timezone, which isn't known until settings load, so date starts out
+  // unknown rather than defaulting to the device's local "today".
+  const [date, setDate] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (settings && date === null) {
+      setDate(DateTime.now().setZone(settings.timezone).toISODate()!);
+    }
+  }, [settings, date]);
+
+  const { data: bookings } = useQuery({
+    queryKey: ['adminBookings', date],
+    queryFn: () => getAdminBookings(date!),
+    enabled: date !== null,
+  });
+
+  if (settingsPending || !settings || date === null) return <p>Загрузка...</p>;
 
   return (
     <div>
@@ -18,7 +37,7 @@ export function AdminBookings() {
         <tbody>
           {bookings?.map((booking) => (
             <tr key={booking.id}>
-              <td>{DateTime.fromISO(booking.startsAt).setZone('Europe/Moscow').toFormat('HH:mm')}</td>
+              <td>{DateTime.fromISO(booking.startsAt).setZone(settings.timezone).toFormat('HH:mm')}</td>
               <td>{booking.clientFirstName ?? booking.clientUsername ?? '—'}</td>
               <td>{booking.serviceName}</td>
             </tr>

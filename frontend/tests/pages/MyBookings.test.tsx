@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import { MyBookings } from '../../src/pages/MyBookings/MyBookings';
 import * as bookingsApi from '../../src/api/bookings';
+import * as settingsApi from '../../src/api/settings';
 
 function availableFn<T extends (...args: never[]) => unknown>(impl?: T) {
   const fn = vi.fn(impl);
@@ -11,6 +12,7 @@ function availableFn<T extends (...args: never[]) => unknown>(impl?: T) {
 }
 
 vi.mock('../../src/api/bookings');
+vi.mock('../../src/api/settings');
 vi.mock('@telegram-apps/sdk-react', () => ({
   backButton: {
     mount: availableFn(),
@@ -32,6 +34,7 @@ describe('MyBookings', () => {
       },
     ]);
     const cancelMock = vi.spyOn(bookingsApi, 'cancelBooking').mockResolvedValue({ ok: true });
+    vi.spyOn(settingsApi, 'getSettings').mockResolvedValue({ timezone: 'Europe/Moscow', bookingHorizonDays: 14 });
     const queryClient = new QueryClient();
 
     render(
@@ -56,6 +59,7 @@ describe('MyBookings', () => {
         status: 'cancelled', createdAt: '2019-01-01T00:00:00.000Z',
       },
     ]);
+    vi.spyOn(settingsApi, 'getSettings').mockResolvedValue({ timezone: 'Europe/Moscow', bookingHorizonDays: 14 });
     const queryClient = new QueryClient();
 
     render(

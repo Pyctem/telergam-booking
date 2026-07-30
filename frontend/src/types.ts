@@ -39,3 +39,9 @@ export interface BusinessSettings {
   ownerChatId: number | null;
   timezone: string;
 }
+
+// Subset of BusinessSettings returned by the public GET /api/settings route.
+// That route deliberately omits workingHours/ownerChatId (admin-only, served
+// via /api/admin/settings) — keep this type in sync with the real response
+// shape rather than widening it back to the full BusinessSettings.
+export type PublicBusinessSettings = Pick<BusinessSettings, 'timezone' | 'bookingHorizonDays'>;

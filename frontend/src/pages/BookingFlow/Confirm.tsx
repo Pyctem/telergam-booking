@@ -8,6 +8,7 @@ import { getWhoAmI } from '../../api/user';
 import { ApiError } from '../../api/client';
 import { useMainButton } from '../../hooks/useMainButton';
 import { useBackButton } from '../../hooks/useBackButton';
+import { useBusinessSettings } from '../../hooks/useBusinessSettings';
 
 export function Confirm() {
   const { serviceId } = useParams<{ serviceId: string }>();
@@ -19,6 +20,7 @@ export function Confirm() {
   const { data: services } = useQuery({ queryKey: ['services'], queryFn: getServices });
   const service = services?.find((s) => s.id === Number(serviceId));
   const { data: me } = useQuery({ queryKey: ['whoami'], queryFn: getWhoAmI });
+  const { data: settings, isPending: settingsPending } = useBusinessSettings();
 
   useBackButton(() => navigate(-1));
 
@@ -38,9 +40,9 @@ export function Confirm() {
 
   useMainButton({ text: 'Записаться', onClick: handleConfirm, enabled: Boolean(service) });
 
-  if (!service) return <p>Загрузка...</p>;
+  if (!service || settingsPending || !settings) return <p>Загрузка...</p>;
 
-  const dt = DateTime.fromISO(startsAt, { zone: 'utc' }).setZone('Europe/Moscow');
+  const dt = DateTime.fromISO(startsAt, { zone: 'utc' }).setZone(settings.timezone);
 
   return (
     <div>

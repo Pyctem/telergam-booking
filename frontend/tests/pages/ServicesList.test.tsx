@@ -1,11 +1,19 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import { ServicesList } from '../../src/pages/ServicesList/ServicesList';
 import * as servicesApi from '../../src/api/services';
 
 vi.mock('../../src/api/services');
+
+afterEach(() => {
+  // Safety net: a failed assertion inside the offline regression test below
+  // must not leave onlineManager stuck "offline" for every other test file
+  // (query-core's onlineManager is a module-level singleton for the
+  // lifetime of this test file).
+  onlineManager.setOnline(true);
+});
 
 describe('ServicesList', () => {
   it('renders each active service with its price and duration', async () => {
@@ -27,5 +35,48 @@ describe('ServicesList', () => {
     expect(screen.getByText('Beard trim')).toBeInTheDocument();
     expect(screen.getByText(/1500/)).toBeInTheDocument();
     expect(screen.getByText(/30/)).toBeInTheDocument();
+  });
+
+  // Regression test for the isPending-vs-isLoading bug fixed in ServicesList:
+  // `isLoading` is `isPending && isFetching`, so it can read `false` while
+  // there is still no data. We reproduce that exact react-query state
+  // (status: 'pending', fetchStatus: 'paused', so isFetching/isLoading are
+  // both false) deterministically by flipping the query client offline
+  // before mount: react-query then dispatches its "fetch" action but never
+  // actually calls the queryFn (fetchStatus goes straight to 'paused'
+  // instead of 'fetching'), and stays there — data remains undefined
+  // indefinitely with isPending: true, isLoading: false. This is a stable,
+  // waitable state, unlike the transient default-online 'idle'->'fetching'
+  // flash a plain never-resolving promise would produce (which keeps
+  // isFetching/isLoading true forever and would pass under either flag,
+  // proving nothing).
+  //
+  // Under the current source (`if (isPending) return <p>Загрузка...</p>;`)
+  // this renders the loading state and never reaches `services!.map(...)`.
+  // If ServicesList were reverted to checking `isLoading` instead, this
+  // exact state (isPending: true, isLoading: false) would skip the loading
+  // return, fall through past the `error` check (error is null, not set),
+  // and hit `services!.map(...)` with `services === undefined`, throwing a
+  // TypeError — which would make this test fail.
+  it('shows the loading state, not a crash, while no data has arrived and isLoading is already false (isPending regression)', async () => {
+    onlineManager.setOnline(false);
+    const getServicesMock = vi.spyOn(servicesApi, 'getServices').mockImplementation(
+      () => new Promise(() => {})
+    );
+    const queryClient = new QueryClient();
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }} initialEntries={['/']}>
+          <ServicesList />
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+
+    await waitFor(() => expect(screen.getByText('Загрузка...')).toBeInTheDocument());
+    // While offline/paused, react-query never even calls the queryFn.
+    expect(getServicesMock).not.toHaveBeenCalled();
+
+    onlineManager.setOnline(true);
   });
 });
