@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
+import { AppRoot } from '@telegram-apps/telegram-ui';
 import { ServicesList } from '../../src/pages/ServicesList/ServicesList';
 import * as servicesApi from '../../src/api/services';
 
@@ -24,11 +25,13 @@ describe('ServicesList', () => {
     const queryClient = new QueryClient();
 
     render(
-      <QueryClientProvider client={queryClient}>
-        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }} initialEntries={['/']}>
-          <ServicesList />
-        </MemoryRouter>
-      </QueryClientProvider>
+      <AppRoot>
+        <QueryClientProvider client={queryClient}>
+          <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }} initialEntries={['/']}>
+            <ServicesList />
+          </MemoryRouter>
+        </QueryClientProvider>
+      </AppRoot>
     );
 
     await waitFor(() => expect(screen.getByText('Haircut')).toBeInTheDocument());
@@ -51,12 +54,12 @@ describe('ServicesList', () => {
   // isFetching/isLoading true forever and would pass under either flag,
   // proving nothing).
   //
-  // Under the current source (`if (isPending) return <p>Загрузка...</p>;`)
-  // this renders the loading state and never reaches `services!.map(...)`.
+  // Under the current source (`if (isPending) return <Placeholder header="Загрузка...">...`)
+  // this renders the loading state and never reaches `services.map(...)`.
   // If ServicesList were reverted to checking `isLoading` instead, this
   // exact state (isPending: true, isLoading: false) would skip the loading
   // return, fall through past the `error` check (error is null, not set),
-  // and hit `services!.map(...)` with `services === undefined`, throwing a
+  // and hit `services.map(...)` with `services === undefined`, throwing a
   // TypeError — which would make this test fail.
   it('shows the loading state, not a crash, while no data has arrived and isLoading is already false (isPending regression)', async () => {
     onlineManager.setOnline(false);
@@ -66,11 +69,13 @@ describe('ServicesList', () => {
     const queryClient = new QueryClient();
 
     render(
-      <QueryClientProvider client={queryClient}>
-        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }} initialEntries={['/']}>
-          <ServicesList />
-        </MemoryRouter>
-      </QueryClientProvider>
+      <AppRoot>
+        <QueryClientProvider client={queryClient}>
+          <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }} initialEntries={['/']}>
+            <ServicesList />
+          </MemoryRouter>
+        </QueryClientProvider>
+      </AppRoot>
     );
 
     await waitFor(() => expect(screen.getByText('Загрузка...')).toBeInTheDocument());

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
+import { List, Section, Cell, Placeholder, Spinner } from '@telegram-apps/telegram-ui';
 import { getServices } from '../../api/services';
 
 export function ServicesList() {
@@ -9,25 +10,35 @@ export function ServicesList() {
   // isLoading is isPending && isFetching, so it drops to false during a failed
   // query's retry-backoff delay even though there's still no data — services!
   // would then crash. isPending stays true for that whole window.
-  if (isPending) return <p>Загрузка...</p>;
-  if (error) return <p>Не удалось загрузить услуги</p>;
+  if (isPending) {
+    return (
+      <Placeholder header="Загрузка...">
+        <Spinner size="m" />
+      </Placeholder>
+    );
+  }
+  if (error) {
+    return <Placeholder header="Не удалось загрузить услуги" />;
+  }
 
   return (
-    <div>
-      <h1>Услуги</h1>
-      <ul style={{ listStyle: 'none', padding: 0 }}>
-        {services!.map((service) => (
-          <li key={service.id}>
-            <Link to={`/booking/${service.id}`}>
-              <div style={{ background: 'var(--tg-theme-secondary-bg-color)', padding: 12, borderRadius: 8, marginBottom: 8 }}>
-                <div>{service.name}</div>
-                <div>{service.price} ₽ · {service.durationMinutes} мин</div>
-              </div>
-            </Link>
-          </li>
+    <List>
+      <Section header="Услуги">
+        {services.map((service) => (
+          <Link
+            key={service.id}
+            to={`/booking/${service.id}`}
+            style={{ textDecoration: 'none', color: 'inherit' }}
+          >
+            <Cell subtitle={`${service.price} ₽ · ${service.durationMinutes} мин`}>{service.name}</Cell>
+          </Link>
         ))}
-      </ul>
-      <Link to="/my-bookings">Мои записи</Link>
-    </div>
+      </Section>
+      <Section>
+        <Link to="/my-bookings" style={{ textDecoration: 'none', color: 'inherit' }}>
+          <Cell>Мои записи</Cell>
+        </Link>
+      </Section>
+    </List>
   );
 }
