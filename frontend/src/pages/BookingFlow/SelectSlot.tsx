@@ -89,16 +89,24 @@ export function SelectSlot() {
                       key={day.date}
                       Component="button"
                       type="button"
-                      mode={day.date === selectedDate ? 'elevated' : 'outline'}
+                      mode="outline"
                       aria-pressed={day.date === selectedDate}
                       aria-disabled={!day.enabled}
                       disabled={!day.enabled}
                       onClick={day.enabled ? () => setSelectedDate(day.date) : undefined}
-                      style={
-                        day.enabled
-                          ? { justifyContent: 'center' }
-                          : { justifyContent: 'center', opacity: 0.35, pointerEvents: 'none' }
-                      }
+                      style={{
+                        justifyContent: 'center',
+                        // `mode="elevated"` (telegram-ui's own "selected" look) uses
+                        // --tgui--surface_primary, which in dark theme is nearly the
+                        // same lightness as the page background (~9% vs ~13%) — the
+                        // selected day was invisible against a dark background. Use
+                        // the Telegram button accent color instead: it's designed to
+                        // always contrast with both the light and dark theme backgrounds.
+                        ...(day.date === selectedDate
+                          ? { backgroundColor: 'var(--tg-theme-button-color)', color: 'var(--tg-theme-button-text-color)' }
+                          : {}),
+                        ...(day.enabled ? {} : { opacity: 0.35, pointerEvents: 'none' }),
+                      }}
                     >
                       {DateTime.fromISO(day.date).day}
                     </Chip>

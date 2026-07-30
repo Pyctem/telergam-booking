@@ -247,4 +247,34 @@ describe('SelectSlot', () => {
     expect(screen.getByText('Июнь 2099')).toBeInTheDocument();
     expect(screen.getByText('Июль 2099')).toBeInTheDocument();
   });
+
+  it('gives the selected day chip a Telegram button-color background instead of Chip\'s own "elevated" surface', async () => {
+    // Regression test: mode="elevated" uses --tgui--surface_primary, which
+    // in dark theme is nearly the same lightness as the page background
+    // (~9% vs ~13%), making the selected day invisible against a dark
+    // background. The selected chip must instead use var(--tg-theme-button-color)
+    // (and matching text color), which is designed to contrast with both themes.
+    vi.spyOn(servicesApi, 'getServices').mockResolvedValue([
+      { id: 1, name: 'Haircut', description: null, price: 1500, durationMinutes: 30, isActive: true },
+    ]);
+    vi.spyOn(slotsApi, 'getSlots').mockResolvedValue([]);
+    vi.spyOn(settingsApi, 'getSettings').mockResolvedValue({ timezone: 'Europe/Moscow', bookingHorizonDays: 3 });
+    const queryClient = new QueryClient();
+
+    const { container } = renderWithProviders(routedSelectSlot(), {
+      queryClient,
+      initialEntries: ['/booking/1'],
+    });
+
+    await waitFor(() => expect(screen.getByText('Нет свободных слотов на эту дату')).toBeInTheDocument());
+
+    const selectedChip = container.querySelector('[aria-pressed="true"]') as HTMLElement;
+    const unselectedChip = container.querySelector('[aria-pressed="false"]') as HTMLElement;
+
+    expect(selectedChip.style.backgroundColor).toBe('var(--tg-theme-button-color)');
+    expect(selectedChip.style.color).toBe('var(--tg-theme-button-text-color)');
+    // The unselected chip must NOT carry the accent background — otherwise
+    // every day would look "selected".
+    expect(unselectedChip.style.backgroundColor).not.toBe('var(--tg-theme-button-color)');
+  });
 });

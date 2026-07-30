@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
@@ -17,6 +17,16 @@ export function Confirm() {
   const startsAt = searchParams.get('startsAt')!;
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  // `isSubmitting` state drives the UI (MainButton disabled + loader), but
+  // it's not a safe re-entrancy guard on its own: if two taps happen close
+  // enough together that both invoke `handleConfirm` before React re-renders
+  // (and MainButton's onClick handler gets re-registered with a fresh
+  // closure), both calls would read the same stale `isSubmitting === false`
+  // from the closure they were created with. A ref is mutated in place and
+  // read fresh on every access regardless of which render's closure is
+  // calling it, so it can't go stale between two synchronous-ish calls.
+  const isSubmittingRef = useRef(false);
 
   const { data: services } = useQuery({ queryKey: ['services'], queryFn: getServices });
   const service = services?.find((s) => s.id === Number(serviceId));
@@ -26,7 +36,12 @@ export function Confirm() {
   useBackButton(() => navigate(-1));
 
   async function handleConfirm() {
+    // The ref is the actual re-entrancy guard (see comment above); MainButton
+    // being visually disabled during `isSubmitting` is a UI hint, not a lock.
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
     setError(null);
+    setIsSubmitting(true);
     try {
       await createBooking({ serviceId: Number(serviceId), startsAt });
       navigate('/my-bookings');
@@ -36,10 +51,17 @@ export function Confirm() {
       } else {
         setError('Не удалось создать запись, попробуйте ещё раз');
       }
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
     }
   }
 
-  useMainButton({ text: 'Записаться', onClick: handleConfirm, enabled: Boolean(service) });
+  useMainButton({
+    text: 'Записаться',
+    onClick: handleConfirm,
+    enabled: Boolean(service),
+    loading: isSubmitting,
+  });
 
   if (!service || settingsPending || !settings) {
     return (
