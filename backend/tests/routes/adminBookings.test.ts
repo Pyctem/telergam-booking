@@ -22,6 +22,14 @@ function authHeaderFor(telegramId: number): string {
 }
 
 describe('GET /api/admin/bookings', () => {
+  it('rejects a non-admin user with 403', async () => {
+    const app = createApp();
+    const res = await request(app)
+      .get('/api/admin/bookings?date=2099-03-02')
+      .set('Authorization', authHeaderFor(1));
+    expect(res.status).toBe(403);
+  });
+
   it('returns confirmed bookings for the requested date only', async () => {
     const app = createApp();
     const header = authHeaderFor(1);
@@ -32,13 +40,16 @@ describe('GET /api/admin/bookings', () => {
       `INSERT INTO services (name, price, duration_minutes) VALUES ('Cut', 1000, 30) RETURNING id`
     );
     const clientRow = await pool.query(`INSERT INTO users (telegram_id) VALUES (2) RETURNING id`);
-    await createBooking({ userId: clientRow.rows[0].id, serviceId: serviceRes.rows[0].id, startsAt: '2099-03-01T09:00:00.000Z' });
+    // 2099-03-02 is a Monday and 2099-03-03 a Tuesday, both within the
+    // default seeded working hours (09:00-20:00 Europe/Moscow) so these
+    // remain valid slots after the createBooking slot-revalidation fix.
     await createBooking({ userId: clientRow.rows[0].id, serviceId: serviceRes.rows[0].id, startsAt: '2099-03-02T09:00:00.000Z' });
+    await createBooking({ userId: clientRow.rows[0].id, serviceId: serviceRes.rows[0].id, startsAt: '2099-03-03T09:00:00.000Z' });
 
-    const res = await request(app).get('/api/admin/bookings?date=2099-03-01').set('Authorization', header);
+    const res = await request(app).get('/api/admin/bookings?date=2099-03-02').set('Authorization', header);
     expect(res.status).toBe(200);
     expect(res.body).toHaveLength(1);
-    expect(res.body[0].startsAt).toBe('2099-03-01T09:00:00.000Z');
+    expect(res.body[0].startsAt).toBe('2099-03-02T09:00:00.000Z');
   });
 
   it('filters bookings by the business-local day, not the UTC day (Europe/Moscow boundary)', async () => {
@@ -47,9 +58,15 @@ describe('GET /api/admin/bookings', () => {
     await request(app).get('/api/services').set('Authorization', header); // ensures user row exists
     await pool.query(`UPDATE users SET role = 'admin' WHERE telegram_id = 1`);
 
-    // business_settings.timezone is seeded as 'Europe/Moscow' (migrations/001_init.sql), but it's a
-    // singleton row not reset between tests, so pin it explicitly rather than relying on the default.
-    await pool.query(`UPDATE business_settings SET timezone = 'Europe/Moscow' WHERE id = 1`);
+    // business_settings.timezone is seeded as 'Europe/Moscow' (migrations/001_init.sql). Also widen
+    // working hours to include 01:00-02:00 local on Monday: the default seeded hours (09:00-20:00)
+    // would make the 01:00-local booking below an invalid slot under createBooking's slot
+    // revalidation, but this test only cares about the UTC/local day-boundary filtering, not working
+    // hours, so we explicitly open the window it needs (same pattern as slots.test.ts).
+    await pool.query(
+      `UPDATE business_settings SET timezone = 'Europe/Moscow', working_hours = $1::jsonb WHERE id = 1`,
+      ['{"mon":{"start":"01:00","end":"02:00"}}']
+    );
 
     const serviceRes = await pool.query(
       `INSERT INTO services (name, price, duration_minutes) VALUES ('Cut', 1000, 30) RETURNING id`

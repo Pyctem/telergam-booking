@@ -40,14 +40,21 @@ describe('POST /api/bookings notifications', () => {
     expect(res.status).toBe(201);
   });
 
-  it('still notifies the client even when the owner_chat_id settings lookup fails', async () => {
+  it('still notifies the client even when the owner_chat_id/timezone settings lookup fails', async () => {
     // Reproduces the second half of the bug this suite guards against: if
-    // `SELECT owner_chat_id FROM business_settings ...` throws (transient DB
-    // blip, pool exhaustion, etc.), the client's own booking-confirmation
-    // notification must still be sent — it doesn't depend on that query at
-    // all. Before the fix, the settings-query failure prevented
-    // notifyBookingCreated from ever being called, silently skipping the
-    // client's notification too.
+    // the post-response `SELECT owner_chat_id, timezone FROM
+    // business_settings ...` (used only for the notification) throws
+    // (transient DB blip, pool exhaustion, etc.), the client's own
+    // booking-confirmation notification must still be sent — it doesn't
+    // depend on that query at all. Before the fix, the settings-query
+    // failure prevented notifyBookingCreated from ever being called,
+    // silently skipping the client's notification too.
+    //
+    // Note this deliberately targets only the notification IIFE's settings
+    // query (identified by selecting `owner_chat_id`), not createBooking's
+    // own `SELECT * FROM business_settings WHERE id = 1` (used for slot
+    // revalidation, Finding 1) — that one must keep succeeding, or the
+    // booking itself would never be created.
     const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
 
@@ -62,7 +69,7 @@ describe('POST /api/bookings notifications', () => {
       .mockImplementation((...args: Parameters<typeof pool.query>) => {
         const first = args[0];
         const text = typeof first === 'string' ? first : (first as { text: string }).text;
-        if (text.includes('business_settings')) {
+        if (typeof text === 'string' && text.includes('owner_chat_id')) {
           return Promise.reject(new Error('settings lookup failed'));
         }
         // @ts-expect-error -- forwarding to the real implementation with the same args

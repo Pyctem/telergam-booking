@@ -29,6 +29,7 @@ bookingsRouter.post('/', async (req, res) => {
 
   if (!result.ok) {
     if (result.reason === 'conflict') return res.status(409).json({ error: 'Slot no longer available' });
+    if (result.reason === 'invalid_slot') return res.status(422).json({ error: 'Requested time is not a valid slot' });
     return res.status(404).json({ error: 'Service not found' });
   }
 
@@ -42,14 +43,23 @@ bookingsRouter.post('/', async (req, res) => {
   // the owner lookup fails.
   void (async () => {
     let ownerChatId: number | null = null;
+    let timezone = 'UTC';
     try {
-      const settingsResult = await pool.query('SELECT owner_chat_id FROM business_settings WHERE id = 1');
-      const rawOwnerChatId = settingsResult.rows[0]?.owner_chat_id;
+      const settingsResult = await pool.query('SELECT owner_chat_id, timezone FROM business_settings WHERE id = 1');
+      const settingsRow = settingsResult.rows[0];
+      const rawOwnerChatId = settingsRow?.owner_chat_id;
       ownerChatId = rawOwnerChatId !== null && rawOwnerChatId !== undefined ? Number(rawOwnerChatId) : null;
+      if (settingsRow?.timezone) timezone = settingsRow.timezone;
     } catch (err) {
-      console.error('Failed to fetch owner_chat_id for booking notification', err);
+      console.error('Failed to fetch owner_chat_id/timezone for booking notification', err);
     }
-    await notifyBookingCreated(result.booking, req.user!.telegramId, ownerChatId);
+    await notifyBookingCreated(
+      result.booking,
+      req.user!.telegramId,
+      ownerChatId,
+      timezone,
+      req.user!.firstName
+    );
   })();
 });
 

@@ -1,5 +1,7 @@
+import { DateTime } from 'luxon';
 import { pool } from '../db.js';
-import type { Booking } from '../types.js';
+import { generateSlots } from '../lib/slotGenerator.js';
+import type { Booking, WorkingHours } from '../types.js';
 
 interface CreateBookingParams {
   userId: number;
@@ -9,7 +11,7 @@ interface CreateBookingParams {
 
 type CreateBookingResult =
   | { ok: true; booking: Booking }
-  | { ok: false; reason: 'conflict' | 'not_found' };
+  | { ok: false; reason: 'conflict' | 'not_found' | 'invalid_slot' };
 
 const EXCLUSION_VIOLATION = '23P01';
 
@@ -22,6 +24,48 @@ export async function createBooking(params: CreateBookingParams): Promise<Create
     return { ok: false, reason: 'not_found' };
   }
   const { name: serviceName, duration_minutes: durationMinutes } = serviceResult.rows[0];
+
+  const settingsResult = await pool.query('SELECT * FROM business_settings WHERE id = 1');
+  const settings = settingsResult.rows[0];
+
+  // Interpret the requested instant in the business's configured timezone so
+  // the "day" (and therefore the working-hours window and slot grid) matches
+  // what GET /api/slots computed it as. `startsAt` always carries its own
+  // offset (validated upstream as a full ISO datetime), so this just changes
+  // the zone used for *display*/day-bucketing, not the underlying instant.
+  const startsAtDt = DateTime.fromISO(params.startsAt, { zone: settings.timezone });
+  if (!startsAtDt.isValid) {
+    return { ok: false, reason: 'invalid_slot' };
+  }
+  const date = startsAtDt.toISODate()!;
+
+  // Same UTC-range query pattern as GET /api/slots and GET /api/admin/bookings
+  // use (timezone-correct day boundaries, not a bare `::date` cast).
+  const dayStart = startsAtDt.startOf('day');
+  const dayEnd = dayStart.plus({ days: 1 });
+  const bookingsResult = await pool.query(
+    `SELECT starts_at, ends_at FROM bookings
+     WHERE status = 'confirmed' AND starts_at >= $1 AND starts_at < $2`,
+    [dayStart.toUTC().toISO(), dayEnd.toUTC().toISO()]
+  );
+
+  const slots = generateSlots({
+    date,
+    workingHours: settings.working_hours as WorkingHours,
+    slotIntervalMinutes: settings.slot_interval_minutes,
+    serviceDurationMinutes: durationMinutes,
+    existingBookings: bookingsResult.rows.map((row) => ({
+      startsAt: new Date(row.starts_at),
+      endsAt: new Date(row.ends_at),
+    })),
+    timezone: settings.timezone,
+    now: new Date(),
+  });
+
+  const requestedSlotIso = startsAtDt.toUTC().toISO({ suppressMilliseconds: false });
+  if (!slots.includes(requestedSlotIso!)) {
+    return { ok: false, reason: 'invalid_slot' };
+  }
 
   try {
     const result = await pool.query(
