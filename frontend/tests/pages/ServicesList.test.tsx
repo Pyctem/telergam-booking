@@ -1,10 +1,9 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react-query';
-import { MemoryRouter } from 'react-router-dom';
-import { AppRoot } from '@telegram-apps/telegram-ui';
+import { screen, waitFor } from '@testing-library/react';
+import { QueryClient, onlineManager } from '@tanstack/react-query';
 import { ServicesList } from '../../src/pages/ServicesList/ServicesList';
 import * as servicesApi from '../../src/api/services';
+import { renderWithProviders } from '../testUtils';
 
 vi.mock('../../src/api/services');
 
@@ -24,15 +23,7 @@ describe('ServicesList', () => {
     ]);
     const queryClient = new QueryClient();
 
-    render(
-      <AppRoot>
-        <QueryClientProvider client={queryClient}>
-          <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }} initialEntries={['/']}>
-            <ServicesList />
-          </MemoryRouter>
-        </QueryClientProvider>
-      </AppRoot>
-    );
+    renderWithProviders(<ServicesList />, { queryClient });
 
     await waitFor(() => expect(screen.getByText('Haircut')).toBeInTheDocument());
     expect(screen.getByText('Beard trim')).toBeInTheDocument();
@@ -68,15 +59,7 @@ describe('ServicesList', () => {
     );
     const queryClient = new QueryClient();
 
-    render(
-      <AppRoot>
-        <QueryClientProvider client={queryClient}>
-          <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }} initialEntries={['/']}>
-            <ServicesList />
-          </MemoryRouter>
-        </QueryClientProvider>
-      </AppRoot>
-    );
+    renderWithProviders(<ServicesList />, { queryClient });
 
     await waitFor(() => expect(screen.getByText('Загрузка...')).toBeInTheDocument());
     // While offline/paused, react-query never even calls the queryFn.
