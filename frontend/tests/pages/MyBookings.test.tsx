@@ -57,6 +57,36 @@ describe('MyBookings', () => {
     await waitFor(() => expect(getMyBookingsMock).toHaveBeenCalledTimes(2));
   });
 
+  it('disables the cancel button while the cancellation request is in flight', async () => {
+    vi.spyOn(bookingsApi, 'getMyBookings').mockResolvedValue([
+      {
+        id: 3, userId: 1, serviceId: 1, serviceName: 'Haircut',
+        startsAt: '2099-01-01T09:00:00.000Z', endsAt: '2099-01-01T09:30:00.000Z',
+        status: 'confirmed', createdAt: '2098-01-01T00:00:00.000Z',
+      },
+    ]);
+    let resolveCancel!: (value: { ok: boolean }) => void;
+    vi.spyOn(bookingsApi, 'cancelBooking').mockReturnValue(
+      new Promise((resolve) => {
+        resolveCancel = resolve;
+      })
+    );
+    vi.spyOn(settingsApi, 'getSettings').mockResolvedValue({ timezone: 'Europe/Moscow', bookingHorizonDays: 14 });
+
+    renderWithProviders(<MyBookings />);
+
+    await waitFor(() => expect(screen.getByText('Haircut')).toBeInTheDocument());
+    const cancelButton = screen.getByRole('button', { name: /cancel/i }) as HTMLButtonElement;
+
+    fireEvent.click(cancelButton);
+
+    await waitFor(() => expect(cancelButton.disabled).toBe(true));
+
+    resolveCancel({ ok: true });
+
+    await waitFor(() => expect(cancelButton.disabled).toBe(false));
+  });
+
   it('does not show a cancel button for an already cancelled booking', async () => {
     vi.spyOn(bookingsApi, 'getMyBookings').mockResolvedValue([
       {

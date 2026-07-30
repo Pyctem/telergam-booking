@@ -33,18 +33,39 @@ export function MyBookings() {
         {bookings?.map((booking) => {
           const dt = DateTime.fromISO(booking.startsAt).setZone(settings.timezone);
           const isConfirmed = booking.status === 'confirmed';
+          const isCancelling = cancelMutation.isPending && cancelMutation.variables === booking.id;
           return (
             <Cell
               key={booking.id}
               subtitle={`${dt.toFormat('dd.MM.yyyy')} at ${dt.toFormat('HH:mm')}`}
               after={
-                <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+                // Matches the Cell's own middle-content vertical padding
+                // (--tgui--cell--middle--padding: 16px 0) — the `after` slot
+                // has none of its own, so once this column got taller than a
+                // single badge (badge row + gap + Cancel button), Cell's
+                // align-items: center left the Cancel button flush against
+                // the bottom edge instead of matching the top gap.
+                <span
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-end',
+                    gap: 6,
+                    padding: '16px 0',
+                  }}
+                >
                   <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <Badge type="dot" mode={isConfirmed ? 'primary' : 'gray'} />
                     <Caption weight="2">{isConfirmed ? 'Confirmed' : 'Cancelled'}</Caption>
                   </span>
                   {isConfirmed && (
-                    <Button size="s" mode="outline" onClick={() => cancelMutation.mutate(booking.id)}>
+                    <Button
+                      size="s"
+                      mode="outline"
+                      loading={isCancelling}
+                      disabled={isCancelling}
+                      onClick={() => cancelMutation.mutate(booking.id)}
+                    >
                       Cancel
                     </Button>
                   )}
