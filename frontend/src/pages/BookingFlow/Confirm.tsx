@@ -51,14 +51,21 @@ export function Confirm() {
 
   const dt = DateTime.fromISO(startsAt, { zone: 'utc' }).setZone(settings.timezone);
 
+  // Built as a filtered array (instead of `{cond && <Cell/>}` inline among
+  // siblings) because Section inserts a Divider between children using
+  // Children.map/Children.count, which counts a bare `false` as a child
+  // slot — that would render a stray divider at the top of the section
+  // whenever me?.firstName is absent.
+  const detailCells = [
+    me?.firstName && <Cell key="name" subtitle="Записываем">{me.firstName}</Cell>,
+    <Cell key="datetime" subtitle="Дата и время">{`${dt.toFormat('dd.MM.yyyy')} в ${dt.toFormat('HH:mm')}`}</Cell>,
+    <Cell key="price" subtitle="Стоимость">{`${service.price} ₽ · ${service.durationMinutes} мин`}</Cell>,
+  ].filter((cell): cell is JSX.Element => Boolean(cell));
+
   return (
     <div>
       <List>
-        <Section header={service.name}>
-          {me?.firstName && <Cell subtitle="Записываем">{me.firstName}</Cell>}
-          <Cell subtitle="Дата и время">{`${dt.toFormat('dd.MM.yyyy')} в ${dt.toFormat('HH:mm')}`}</Cell>
-          <Cell subtitle="Стоимость">{`${service.price} ₽ · ${service.durationMinutes} мин`}</Cell>
-        </Section>
+        <Section header={service.name}>{detailCells}</Section>
       </List>
       {error && (
         <div role="alert">

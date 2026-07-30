@@ -79,13 +79,37 @@ describe('SelectSlot', () => {
 
     // 06:00 UTC is 09:00 in Europe/Moscow (UTC+3, no DST) — this proves the
     // label is converted to the business's local timezone, not left in raw
-    // UTC. Chip renders as a <div> by default (ChipProps.Component defaults
-    // to 'div', not 'button'), so there is no button role to query here —
-    // the click target is found by its text content instead.
-    const slotChip = await screen.findByText('09:00');
+    // UTC. SelectSlot renders time-slot Chips with Component="button", so
+    // this is a real, keyboard-focusable <button> — queried by role here to
+    // pin that down, not just by text.
+    const slotChip = await screen.findByRole('button', { name: '09:00' });
     fireEvent.click(slotChip);
 
     await waitFor(() => expect(screen.getByText('Confirm screen')).toBeInTheDocument());
+  });
+
+  it('does not render a stray divider in the slots Section when slots are available', async () => {
+    // Regression test for a bug where `<Section>{cond && <Placeholder/>}<div>...</div></Section>`
+    // always passed Section exactly two "child slots" even when the first
+    // evaluated to `false` — Section counts children with Children.count and
+    // inserts an <hr> between every pair, so a bare `false` slot still grew
+    // a divider. That divider must not appear once slots render normally.
+    vi.spyOn(servicesApi, 'getServices').mockResolvedValue([
+      { id: 1, name: 'Haircut', description: null, price: 1500, durationMinutes: 30, isActive: true },
+    ]);
+    vi.spyOn(slotsApi, 'getSlots').mockResolvedValue([{ startsAt: '2099-06-01T06:00:00.000Z' }]);
+    vi.spyOn(settingsApi, 'getSettings').mockResolvedValue({ timezone: 'Europe/Moscow', bookingHorizonDays: 3 });
+    const queryClient = new QueryClient();
+
+    const { container } = renderWithProviders(routedSelectSlot(), {
+      queryClient,
+      initialEntries: ['/booking/1'],
+    });
+
+    await screen.findByRole('button', { name: '09:00' });
+
+    const section = screen.getByText('Свободное время').closest('section')!;
+    expect(section.querySelectorAll('hr')).toHaveLength(0);
   });
 
   it('renders one enabled calendar day chip per day of the fetched booking horizon, not a hardcoded count', async () => {
@@ -173,5 +197,54 @@ describe('SelectSlot', () => {
     // setTimeout) wraps each poll in act(), so this doesn't trip React's
     // "update not wrapped in act" warning if anything did change.
     await waitFor(() => expect(getSlotsMock.mock.calls.length).toBe(callCountBefore));
+  });
+
+  it('renders day and time chips as real, keyboard-focusable <button> elements, with disabled days using a native disabled attribute', async () => {
+    // Regression test: telegram-ui's Chip renders a <div> by default, which
+    // is not focusable and not keyboard-activatable. SelectSlot must pass
+    // Component="button" so these are genuine buttons.
+    vi.spyOn(servicesApi, 'getServices').mockResolvedValue([
+      { id: 1, name: 'Haircut', description: null, price: 1500, durationMinutes: 30, isActive: true },
+    ]);
+    vi.spyOn(slotsApi, 'getSlots').mockResolvedValue([{ startsAt: '2099-06-01T06:00:00.000Z' }]);
+    vi.spyOn(settingsApi, 'getSettings').mockResolvedValue({ timezone: 'Europe/Moscow', bookingHorizonDays: 3 });
+    const queryClient = new QueryClient();
+
+    const { container } = renderWithProviders(routedSelectSlot(), {
+      queryClient,
+      initialEntries: ['/booking/1'],
+    });
+
+    const timeChip = await screen.findByRole('button', { name: '09:00' });
+    expect(timeChip.tagName).toBe('BUTTON');
+
+    const enabledDayChip = container.querySelector('[aria-disabled="false"]')!;
+    expect(enabledDayChip.tagName).toBe('BUTTON');
+    expect((enabledDayChip as HTMLButtonElement).disabled).toBe(false);
+    // Real buttons are focusable by construction — no tabindex hack needed.
+    (enabledDayChip as HTMLButtonElement).focus();
+    expect(document.activeElement).toBe(enabledDayChip);
+
+    const disabledDayChip = container.querySelector('[aria-disabled="true"]')!;
+    expect(disabledDayChip.tagName).toBe('BUTTON');
+    expect((disabledDayChip as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('renders a Russian month caption above each month block, and a separate caption when the horizon crosses into the next month', async () => {
+    vi.spyOn(servicesApi, 'getServices').mockResolvedValue([
+      { id: 1, name: 'Haircut', description: null, price: 1500, durationMinutes: 30, isActive: true },
+    ]);
+    vi.spyOn(slotsApi, 'getSlots').mockResolvedValue([]);
+    // Today is frozen at 2099-06-01; a 35-day horizon (June 1 .. July 5)
+    // crosses the June/July boundary, so both months' full grids render.
+    vi.spyOn(settingsApi, 'getSettings').mockResolvedValue({ timezone: 'Europe/Moscow', bookingHorizonDays: 35 });
+    const queryClient = new QueryClient();
+
+    renderWithProviders(routedSelectSlot(), { queryClient, initialEntries: ['/booking/1'] });
+
+    await waitFor(() => expect(screen.getByText('Нет свободных слотов на эту дату')).toBeInTheDocument());
+
+    expect(screen.getByText('Июнь 2099')).toBeInTheDocument();
+    expect(screen.getByText('Июль 2099')).toBeInTheDocument();
   });
 });
