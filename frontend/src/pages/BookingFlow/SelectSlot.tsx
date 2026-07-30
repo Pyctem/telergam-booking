@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import type { CSSProperties } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
@@ -168,12 +169,24 @@ export function SelectSlot() {
                     // "9", so e.g. "11:30" comes out visibly thinner than
                     // "09:00" without an explicit fixed width.
                     justifyContent: 'center',
-                    width: 64,
+                    width: 60,
                     boxSizing: 'border-box',
+                    // Chip's own class sets padding: 8px 12px; that plus the
+                    // default 15-16px label text left too little room at a
+                    // fixed width and "HH:mm" got ellipsis-truncated. Shrink
+                    // both padding and font size, the latter via the same
+                    // CSS custom properties telegram-ui's Subheadline reads
+                    // internally (font-size/line-height), which cascade down
+                    // to it since they're only overridden on this chip.
+                    padding: '6px 4px',
+                    '--tgui--subheadline1--font_size': '13px',
+                    '--tgui--subheadline1--line_height': '16px',
+                    '--tgui--subheadline2--font_size': '13px',
+                    '--tgui--subheadline2--line_height': '16px',
                     WebkitAppearance: 'none',
                     appearance: 'none',
                     background: 'transparent',
-                  }}
+                  } as CSSProperties}
                 >
                   {label}
                 </Chip>
