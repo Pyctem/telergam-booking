@@ -1,15 +1,10 @@
 import { useEffect } from 'react';
-import {
-  bindThemeParamsCssVars,
-  mountThemeParamsSync,
-  isThemeParamsMounted,
-} from '@telegram-apps/sdk-react';
+import { bindThemeParamsCssVars } from '@telegram-apps/sdk-react';
+import { ensureThemeParamsMounted } from '../lib/telegramTheme';
 
 export function useTelegramTheme(): void {
   useEffect(() => {
-    if (mountThemeParamsSync.isAvailable() && !isThemeParamsMounted()) {
-      mountThemeParamsSync();
-    }
+    ensureThemeParamsMounted();
     if (bindThemeParamsCssVars.isAvailable()) {
       return bindThemeParamsCssVars();
     }
