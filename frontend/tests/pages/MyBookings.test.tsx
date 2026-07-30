@@ -41,7 +41,16 @@ describe('MyBookings', () => {
 
     await waitFor(() => expect(screen.getByText('Haircut')).toBeInTheDocument());
     expect(screen.getByText('Подтверждена')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /отменить/i }));
+
+    // Regression test: the cancel button used to be nested inside Cell's
+    // title slot, which Cell renders as an <h6> (via Subheadline) with
+    // text-truncation styling — so a screen reader announced the button as
+    // part of the heading, and it sat inside an overflow:hidden span. The
+    // button must be a sibling of the title, not a descendant of the <h6>.
+    const cancelButton = screen.getByRole('button', { name: /отменить/i });
+    expect(cancelButton.closest('h6')).toBeNull();
+
+    fireEvent.click(cancelButton);
 
     await waitFor(() => expect(cancelMock).toHaveBeenCalledWith(1));
     // Cache invalidation triggers a refetch of the bookings query.

@@ -38,20 +38,20 @@ export function MyBookings() {
               key={booking.id}
               subtitle={`${dt.toFormat('dd.MM.yyyy')} в ${dt.toFormat('HH:mm')}`}
               after={
-                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <Badge type="dot" mode={isConfirmed ? 'primary' : 'gray'} />
-                  <Caption weight="2">{isConfirmed ? 'Подтверждена' : 'Отменена'}</Caption>
+                <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Badge type="dot" mode={isConfirmed ? 'primary' : 'gray'} />
+                    <Caption weight="2">{isConfirmed ? 'Подтверждена' : 'Отменена'}</Caption>
+                  </span>
+                  {isConfirmed && (
+                    <Button size="s" mode="outline" onClick={() => cancelMutation.mutate(booking.id)}>
+                      Отменить
+                    </Button>
+                  )}
                 </span>
               }
             >
               {booking.serviceName}
-              {isConfirmed && (
-                <div style={{ marginTop: 8 }}>
-                  <Button size="s" mode="outline" onClick={() => cancelMutation.mutate(booking.id)}>
-                    Отменить
-                  </Button>
-                </div>
-              )}
             </Cell>
           );
         })}
