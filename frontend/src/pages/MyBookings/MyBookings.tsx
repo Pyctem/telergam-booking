@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
+import { List, Section, Cell, Badge, Caption, Button, Placeholder, Spinner } from '@telegram-apps/telegram-ui';
 import { getMyBookings, cancelBooking } from '../../api/bookings';
 import { useBackButton } from '../../hooks/useBackButton';
 import { useBusinessSettings } from '../../hooks/useBusinessSettings';
@@ -18,24 +19,43 @@ export function MyBookings() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['myBookings'] }),
   });
 
-  if (settingsPending || !settings) return <p>Загрузка...</p>;
+  if (settingsPending || !settings) {
+    return (
+      <Placeholder header="Загрузка...">
+        <Spinner size="m" />
+      </Placeholder>
+    );
+  }
 
   return (
-    <div>
-      <h1>Мои записи</h1>
-      {bookings?.map((booking) => {
-        const dt = DateTime.fromISO(booking.startsAt).setZone(settings.timezone);
-        return (
-          <div key={booking.id}>
-            <div>{booking.serviceName}</div>
-            <div>{dt.toFormat('dd.MM.yyyy')} в {dt.toFormat('HH:mm')}</div>
-            <div>{booking.status === 'confirmed' ? 'Подтверждена' : 'Отменена'}</div>
-            {booking.status === 'confirmed' && (
-              <button onClick={() => cancelMutation.mutate(booking.id)}>Отменить</button>
-            )}
-          </div>
-        );
-      })}
-    </div>
+    <List>
+      <Section header="Мои записи">
+        {bookings?.map((booking) => {
+          const dt = DateTime.fromISO(booking.startsAt).setZone(settings.timezone);
+          const isConfirmed = booking.status === 'confirmed';
+          return (
+            <Cell
+              key={booking.id}
+              subtitle={`${dt.toFormat('dd.MM.yyyy')} в ${dt.toFormat('HH:mm')}`}
+              after={
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Badge type="dot" mode={isConfirmed ? 'primary' : 'gray'} />
+                  <Caption weight="2">{isConfirmed ? 'Подтверждена' : 'Отменена'}</Caption>
+                </span>
+              }
+            >
+              {booking.serviceName}
+              {isConfirmed && (
+                <div style={{ marginTop: 8 }}>
+                  <Button size="s" mode="outline" onClick={() => cancelMutation.mutate(booking.id)}>
+                    Отменить
+                  </Button>
+                </div>
+              )}
+            </Cell>
+          );
+        })}
+      </Section>
+    </List>
   );
 }

@@ -1,10 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter } from 'react-router-dom';
+import { screen, waitFor, fireEvent } from '@testing-library/react';
+import { QueryClient } from '@tanstack/react-query';
 import { MyBookings } from '../../src/pages/MyBookings/MyBookings';
 import * as bookingsApi from '../../src/api/bookings';
 import * as settingsApi from '../../src/api/settings';
+import { renderWithProviders } from '../testUtils';
 
 function availableFn<T extends (...args: never[]) => unknown>(impl?: T) {
   const fn = vi.fn(impl);
@@ -26,7 +26,7 @@ vi.mock('@telegram-apps/sdk-react', () => ({
 
 describe('MyBookings', () => {
   it('lists bookings and cancels a confirmed one on button click', async () => {
-    vi.spyOn(bookingsApi, 'getMyBookings').mockResolvedValue([
+    const getMyBookingsMock = vi.spyOn(bookingsApi, 'getMyBookings').mockResolvedValue([
       {
         id: 1, userId: 1, serviceId: 1, serviceName: 'Haircut',
         startsAt: '2099-01-01T09:00:00.000Z', endsAt: '2099-01-01T09:30:00.000Z',
@@ -37,18 +37,15 @@ describe('MyBookings', () => {
     vi.spyOn(settingsApi, 'getSettings').mockResolvedValue({ timezone: 'Europe/Moscow', bookingHorizonDays: 14 });
     const queryClient = new QueryClient();
 
-    render(
-      <QueryClientProvider client={queryClient}>
-        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-          <MyBookings />
-        </MemoryRouter>
-      </QueryClientProvider>
-    );
+    renderWithProviders(<MyBookings />, { queryClient });
 
     await waitFor(() => expect(screen.getByText('Haircut')).toBeInTheDocument());
+    expect(screen.getByText('Подтверждена')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /отменить/i }));
 
     await waitFor(() => expect(cancelMock).toHaveBeenCalledWith(1));
+    // Cache invalidation triggers a refetch of the bookings query.
+    await waitFor(() => expect(getMyBookingsMock).toHaveBeenCalledTimes(2));
   });
 
   it('does not show a cancel button for an already cancelled booking', async () => {
@@ -60,17 +57,11 @@ describe('MyBookings', () => {
       },
     ]);
     vi.spyOn(settingsApi, 'getSettings').mockResolvedValue({ timezone: 'Europe/Moscow', bookingHorizonDays: 14 });
-    const queryClient = new QueryClient();
 
-    render(
-      <QueryClientProvider client={queryClient}>
-        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-          <MyBookings />
-        </MemoryRouter>
-      </QueryClientProvider>
-    );
+    renderWithProviders(<MyBookings />);
 
     await waitFor(() => expect(screen.getByText('Haircut')).toBeInTheDocument());
+    expect(screen.getByText('Отменена')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /отменить/i })).not.toBeInTheDocument();
   });
 });
