@@ -96,6 +96,16 @@ export function SelectSlot() {
                       onClick={day.enabled ? () => setSelectedDate(day.date) : undefined}
                       style={{
                         justifyContent: 'center',
+                        // Component="button" (added for keyboard accessibility) makes
+                        // this a real <button>, which on iOS Safari picks up the
+                        // system's default button chrome (a filled gray face, plus
+                        // its own low-contrast text dimming on :disabled) UNLESS the
+                        // native appearance is explicitly reset — that native styling
+                        // was fighting telegram-ui's own "outline"/disabled look and
+                        // made the disabled day numbers nearly invisible on iPhone.
+                        WebkitAppearance: 'none',
+                        appearance: 'none',
+                        background: day.date === selectedDate ? undefined : 'transparent',
                         // `mode="elevated"` (telegram-ui's own "selected" look) uses
                         // --tgui--surface_primary, which in dark theme is nearly the
                         // same lightness as the page background (~9% vs ~13%) — the
@@ -105,7 +115,12 @@ export function SelectSlot() {
                         ...(day.date === selectedDate
                           ? { backgroundColor: 'var(--tg-theme-button-color)', color: 'var(--tg-theme-button-text-color)' }
                           : {}),
-                        ...(day.enabled ? {} : { opacity: 0.35, pointerEvents: 'none' }),
+                        // Disabled (out-of-horizon) days: de-emphasize with Telegram's
+                        // own "secondary text" color instead of `opacity`, which would
+                        // dim an already-subtle outline chip into illegibility on a
+                        // dark background (see the iOS native-button note above — this
+                        // combined with that to make disabled numbers unreadable).
+                        ...(day.enabled ? {} : { color: 'var(--tg-theme-hint-color)', pointerEvents: 'none' }),
                       }}
                     >
                       {DateTime.fromISO(day.date).day}
@@ -126,7 +141,14 @@ export function SelectSlot() {
             {slots?.map((slot) => {
               const label = DateTime.fromISO(slot.startsAt).setZone(settings!.timezone).toFormat('HH:mm');
               return (
-                <Chip key={slot.startsAt} Component="button" type="button" mode="outline" onClick={() => pickSlot(slot.startsAt)}>
+                <Chip
+                  key={slot.startsAt}
+                  Component="button"
+                  type="button"
+                  mode="outline"
+                  onClick={() => pickSlot(slot.startsAt)}
+                  style={{ WebkitAppearance: 'none', appearance: 'none', background: 'transparent' }}
+                >
                   {label}
                 </Chip>
               );

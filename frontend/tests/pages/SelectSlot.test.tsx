@@ -197,6 +197,19 @@ describe('SelectSlot', () => {
     // setTimeout) wraps each poll in act(), so this doesn't trip React's
     // "update not wrapped in act" warning if anything did change.
     await waitFor(() => expect(getSlotsMock.mock.calls.length).toBe(callCountBefore));
+
+    // Regression: disabled days used to be dimmed via a plain `opacity`
+    // multiplier on the whole chip. On iOS Safari, Chip's Component="button"
+    // (added for keyboard focus) picks up the system's own low-contrast
+    // :disabled button-text dimming, which compounded with our opacity to
+    // make the day number nearly invisible on a dark background. Disabled
+    // days must instead set an explicit, always-legible text color via
+    // Telegram's own "hint" color, and must reset the native button
+    // appearance so no browser default fights it.
+    const disabledStyle = (disabledDays[0] as HTMLElement).style;
+    expect(disabledStyle.color).toBe('var(--tg-theme-hint-color)');
+    expect(disabledStyle.opacity).toBe('');
+    expect(disabledStyle.getPropertyValue('appearance')).toBe('none');
   });
 
   it('renders day and time chips as real, keyboard-focusable <button> elements, with disabled days using a native disabled attribute', async () => {
