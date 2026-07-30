@@ -24,15 +24,15 @@ export function AdminBookings() {
     enabled: date !== null,
   });
 
-  if (settingsPending || !settings || date === null) return <p>Загрузка...</p>;
+  if (settingsPending || !settings || date === null) return <p>Loading...</p>;
 
   return (
     <div>
-      <h2>Записи на день</h2>
+      <h2>Today's Bookings</h2>
       <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
       <table>
         <thead>
-          <tr><th>Время</th><th>Клиент</th><th>Услуга</th></tr>
+          <tr><th>Time</th><th>Client</th><th>Service</th></tr>
         </thead>
         <tbody>
           {bookings?.map((booking) => (

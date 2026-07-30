@@ -99,7 +99,7 @@ describe('POST /api/bookings notifications', () => {
       const [, options] = fetchMock.mock.calls[0] as [string, { body: string }];
       const body = JSON.parse(options.body);
       expect(body.chat_id).toBe(99);
-      expect(body.text).toContain('Вы записаны');
+      expect(body.text).toContain("You're booked");
     } finally {
       querySpy.mockRestore();
     }

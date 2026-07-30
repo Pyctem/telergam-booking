@@ -4,7 +4,7 @@ import type { Booking } from '../types.js';
 
 function formatBookingText(booking: Booking, timezone: string): string {
   const dt = DateTime.fromISO(booking.startsAt).setZone(timezone);
-  return `${booking.serviceName}, ${dt.toFormat('dd.MM.yyyy')} в ${dt.toFormat('HH:mm')}`;
+  return `${booking.serviceName}, ${dt.toFormat('dd.MM.yyyy')} at ${dt.toFormat('HH:mm')}`;
 }
 
 async function sendTelegramMessage(chatId: number, text: string): Promise<void> {
@@ -26,9 +26,9 @@ export async function notifyBookingCreated(
   timezone: string,
   clientName: string | null
 ): Promise<void> {
-  await sendTelegramMessage(clientTelegramId, `Вы записаны на ${formatBookingText(booking, timezone)}`);
+  await sendTelegramMessage(clientTelegramId, `You're booked for ${formatBookingText(booking, timezone)}`);
   if (ownerChatId !== null) {
-    const name = clientName ?? 'Клиент';
-    await sendTelegramMessage(ownerChatId, `Новая запись: ${name}, ${formatBookingText(booking, timezone)}`);
+    const name = clientName ?? 'Client';
+    await sendTelegramMessage(ownerChatId, `New booking: ${name}, ${formatBookingText(booking, timezone)}`);
   }
 }

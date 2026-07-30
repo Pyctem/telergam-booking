@@ -12,31 +12,31 @@ export function ServicesList() {
   // would then crash. isPending stays true for that whole window.
   if (isPending) {
     return (
-      <Placeholder header="Загрузка...">
+      <Placeholder header="Loading...">
         <Spinner size="m" />
       </Placeholder>
     );
   }
   if (error) {
-    return <Placeholder header="Не удалось загрузить услуги" />;
+    return <Placeholder header="Failed to load services" />;
   }
 
   return (
     <List>
-      <Section header="Услуги">
+      <Section header="Services">
         {services.map((service) => (
           <Link
             key={service.id}
             to={`/booking/${service.id}`}
             style={{ textDecoration: 'none', color: 'inherit' }}
           >
-            <Cell subtitle={`${service.price} ₽ · ${service.durationMinutes} мин`}>{service.name}</Cell>
+            <Cell subtitle={`${service.price} ₽ · ${service.durationMinutes} min`}>{service.name}</Cell>
           </Link>
         ))}
       </Section>
       <Section>
         <Link to="/my-bookings" style={{ textDecoration: 'none', color: 'inherit' }}>
-          <Cell>Мои записи</Cell>
+          <Cell>My Bookings</Cell>
         </Link>
       </Section>
     </List>

@@ -40,14 +40,14 @@ describe('MyBookings', () => {
     renderWithProviders(<MyBookings />, { queryClient });
 
     await waitFor(() => expect(screen.getByText('Haircut')).toBeInTheDocument());
-    expect(screen.getByText('Подтверждена')).toBeInTheDocument();
+    expect(screen.getByText('Confirmed')).toBeInTheDocument();
 
     // Regression test: the cancel button used to be nested inside Cell's
     // title slot, which Cell renders as an <h6> (via Subheadline) with
     // text-truncation styling — so a screen reader announced the button as
     // part of the heading, and it sat inside an overflow:hidden span. The
     // button must be a sibling of the title, not a descendant of the <h6>.
-    const cancelButton = screen.getByRole('button', { name: /отменить/i });
+    const cancelButton = screen.getByRole('button', { name: /cancel/i });
     expect(cancelButton.closest('h6')).toBeNull();
 
     fireEvent.click(cancelButton);
@@ -70,7 +70,7 @@ describe('MyBookings', () => {
     renderWithProviders(<MyBookings />);
 
     await waitFor(() => expect(screen.getByText('Haircut')).toBeInTheDocument());
-    expect(screen.getByText('Отменена')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /отменить/i })).not.toBeInTheDocument();
+    expect(screen.getByText('Cancelled')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /cancel/i })).not.toBeInTheDocument();
   });
 });

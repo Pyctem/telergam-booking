@@ -33,14 +33,14 @@ describe('notifyBookingCreated', () => {
     expect(JSON.parse(ownerCall[1].body).text).toContain('Ivan');
   });
 
-  it('falls back to "Клиент" in the owner message when clientName is null', async () => {
+  it('falls back to "Client" in the owner message when clientName is null', async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true }) });
     vi.stubGlobal('fetch', fetchMock);
 
     await notifyBookingCreated(booking, 777, 999, 'Europe/Moscow', null);
 
     const [, ownerCall] = fetchMock.mock.calls;
-    expect(JSON.parse(ownerCall[1].body).text).toContain('Клиент');
+    expect(JSON.parse(ownerCall[1].body).text).toContain('Client');
   });
 
   it('formats the notification time using the given timezone, not a hardcoded one', async () => {

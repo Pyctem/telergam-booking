@@ -108,9 +108,9 @@ describe('Confirm', () => {
     // if handleConfirm still called navigate(-1), Confirm would unmount and this
     // assertion (and the surrounding screen) would be gone.
     await waitFor(() =>
-      expect(screen.getByText('Этот слот только что заняли, выберите другое время')).toBeInTheDocument()
+      expect(screen.getByText('This slot was just taken, please choose another time')).toBeInTheDocument()
     );
-    expect(screen.getByRole('alert')).toHaveTextContent('Этот слот только что заняли, выберите другое время');
+    expect(screen.getByRole('alert')).toHaveTextContent('This slot was just taken, please choose another time');
     expect(screen.getByText('Haircut')).toBeInTheDocument();
     expect(screen.queryByText('Select slot screen')).not.toBeInTheDocument();
     expect(screen.queryByText('My bookings screen')).not.toBeInTheDocument();

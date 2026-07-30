@@ -47,9 +47,9 @@ export function Confirm() {
       navigate('/my-bookings');
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
-        setError('Этот слот только что заняли, выберите другое время');
+        setError('This slot was just taken, please choose another time');
       } else {
-        setError('Не удалось создать запись, попробуйте ещё раз');
+        setError("Couldn't create the booking, please try again");
       }
       isSubmittingRef.current = false;
       setIsSubmitting(false);
@@ -57,7 +57,7 @@ export function Confirm() {
   }
 
   useMainButton({
-    text: 'Записаться',
+    text: 'Book',
     onClick: handleConfirm,
     enabled: Boolean(service),
     loading: isSubmitting,
@@ -65,7 +65,7 @@ export function Confirm() {
 
   if (!service || settingsPending || !settings) {
     return (
-      <Placeholder header="Загрузка...">
+      <Placeholder header="Loading...">
         <Spinner size="m" />
       </Placeholder>
     );
@@ -79,9 +79,9 @@ export function Confirm() {
   // slot — that would render a stray divider at the top of the section
   // whenever me?.firstName is absent.
   const detailCells = [
-    me?.firstName && <Cell key="name" subtitle="Записываем">{me.firstName}</Cell>,
-    <Cell key="datetime" subtitle="Дата и время">{`${dt.toFormat('dd.MM.yyyy')} в ${dt.toFormat('HH:mm')}`}</Cell>,
-    <Cell key="price" subtitle="Стоимость">{`${service.price} ₽ · ${service.durationMinutes} мин`}</Cell>,
+    me?.firstName && <Cell key="name" subtitle="Booking for">{me.firstName}</Cell>,
+    <Cell key="datetime" subtitle="Date & time">{`${dt.toFormat('dd.MM.yyyy')} at ${dt.toFormat('HH:mm')}`}</Cell>,
+    <Cell key="price" subtitle="Price">{`${service.price} ₽ · ${service.durationMinutes} min`}</Cell>,
   ].filter((cell): cell is JSX.Element => Boolean(cell));
 
   return (

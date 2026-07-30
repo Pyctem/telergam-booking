@@ -9,7 +9,7 @@ export type CalendarWeek = (CalendarDay | null)[]; // always length 7, Monday-fi
 
 export interface CalendarMonth {
   monthISO: string; // "YYYY-MM"
-  monthLabel: string; // Russian month name + year, e.g. "Август 2026"
+  monthLabel: string; // English month name + year, e.g. "August 2026"
   weeks: CalendarWeek[];
 }
 
@@ -20,11 +20,12 @@ function mondayOf(dt: DateTime): DateTime {
   return dt.startOf('day').minus({ days: dt.weekday - 1 });
 }
 
-// Russian month name in nominative case, capitalized (Luxon's 'LLLL' gives
-// the standalone form, e.g. "август", but lowercase; captions read better
-// capitalized, like a real calendar heading: "Август 2026").
+// English month name, capitalized (e.g. "August 2026"). The explicit
+// capitalization is defensive — Luxon's 'en' locale already capitalizes
+// 'LLLL', unlike 'ru' where the standalone form is lowercase — but this
+// keeps the function correct even if the locale changes again later.
 function monthLabelOf(monthStart: DateTime): string {
-  const raw = monthStart.setLocale('ru').toFormat('LLLL yyyy');
+  const raw = monthStart.setLocale('en').toFormat('LLLL yyyy');
   return raw.charAt(0).toUpperCase() + raw.slice(1);
 }
 

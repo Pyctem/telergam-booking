@@ -108,7 +108,7 @@ describe('SelectSlot', () => {
 
     await screen.findByRole('button', { name: '09:00' });
 
-    const section = screen.getByText('Свободное время').closest('section')!;
+    const section = screen.getByText('Available times').closest('section')!;
     expect(section.querySelectorAll('hr')).toHaveLength(0);
   });
 
@@ -128,7 +128,7 @@ describe('SelectSlot', () => {
       initialEntries: ['/booking/1'],
     });
 
-    await waitFor(() => expect(screen.getByText('Нет свободных слотов на эту дату')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('No available slots for this date')).toBeInTheDocument());
 
     const enabledDays = container.querySelectorAll('[aria-disabled="false"]');
     expect(enabledDays).toHaveLength(3);
@@ -243,7 +243,7 @@ describe('SelectSlot', () => {
     expect((disabledDayChip as HTMLButtonElement).disabled).toBe(true);
   });
 
-  it('renders a Russian month caption above each month block, and a separate caption when the horizon crosses into the next month', async () => {
+  it('renders a month caption above each month block, and a separate caption when the horizon crosses into the next month', async () => {
     vi.spyOn(servicesApi, 'getServices').mockResolvedValue([
       { id: 1, name: 'Haircut', description: null, price: 1500, durationMinutes: 30, isActive: true },
     ]);
@@ -255,10 +255,10 @@ describe('SelectSlot', () => {
 
     renderWithProviders(routedSelectSlot(), { queryClient, initialEntries: ['/booking/1'] });
 
-    await waitFor(() => expect(screen.getByText('Нет свободных слотов на эту дату')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('No available slots for this date')).toBeInTheDocument());
 
-    expect(screen.getByText('Июнь 2099')).toBeInTheDocument();
-    expect(screen.getByText('Июль 2099')).toBeInTheDocument();
+    expect(screen.getByText('June 2099')).toBeInTheDocument();
+    expect(screen.getByText('July 2099')).toBeInTheDocument();
   });
 
   it('gives the selected day chip a Telegram button-color background instead of Chip\'s own "elevated" surface', async () => {
@@ -279,7 +279,7 @@ describe('SelectSlot', () => {
       initialEntries: ['/booking/1'],
     });
 
-    await waitFor(() => expect(screen.getByText('Нет свободных слотов на эту дату')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('No available slots for this date')).toBeInTheDocument());
 
     const selectedChip = container.querySelector('[aria-pressed="true"]') as HTMLElement;
     const unselectedChip = container.querySelector('[aria-pressed="false"]') as HTMLElement;

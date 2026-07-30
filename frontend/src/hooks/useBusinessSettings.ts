@@ -10,7 +10,7 @@ import { getSettings } from '../api/settings';
 // window would just reintroduce a milder version of the bug this hook
 // exists to fix: the UI would briefly show times/dates computed against the
 // wrong timezone, which looks plausible enough that nobody would notice.
-// Callers should branch on `isPending` and render a short "Загрузка..."
+// Callers should branch on `isPending` and render a short "Loading..."
 // state instead.
 export function useBusinessSettings() {
   return useQuery({ queryKey: ['settings'], queryFn: getSettings });

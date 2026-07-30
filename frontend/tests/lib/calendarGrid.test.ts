@@ -13,7 +13,7 @@ describe('generateCalendarMonths', () => {
     // Only one month block, labelled August 2026
     expect(months).toHaveLength(1);
     expect(months[0].monthISO).toBe('2026-08');
-    expect(months[0].monthLabel).toBe('Август 2026');
+    expect(months[0].monthLabel).toBe('August 2026');
 
     // First week: Mon 2026-07-27 .. Sun 2026-08-02, so the first 5 cells (Mon-Fri, July) are null padding
     expect(weeks[0].slice(0, 5)).toEqual([null, null, null, null, null]);
@@ -59,9 +59,9 @@ describe('generateCalendarMonths', () => {
     // Two separate month blocks, each with its own label, in chronological order
     expect(months).toHaveLength(2);
     expect(months[0].monthISO).toBe('2026-08');
-    expect(months[0].monthLabel).toBe('Август 2026');
+    expect(months[0].monthLabel).toBe('August 2026');
     expect(months[1].monthISO).toBe('2026-09');
-    expect(months[1].monthLabel).toBe('Сентябрь 2026');
+    expect(months[1].monthLabel).toBe('September 2026');
 
     // Every day belonging to August lives only in the August block's weeks
     // (and vice versa for September) — no week mixes real day-numbers from

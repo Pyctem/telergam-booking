@@ -9,7 +9,7 @@ import { useBackButton } from '../../hooks/useBackButton';
 import { useBusinessSettings } from '../../hooks/useBusinessSettings';
 import { generateCalendarMonths } from '../../lib/calendarGrid';
 
-const WEEKDAY_LABELS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export function SelectSlot() {
   const { serviceId } = useParams<{ serviceId: string }>();
@@ -51,7 +51,7 @@ export function SelectSlot() {
 
   if (settingsPending || selectedDate === null) {
     return (
-      <Placeholder header="Загрузка...">
+      <Placeholder header="Loading...">
         <Spinner size="m" />
       </Placeholder>
     );
@@ -60,7 +60,7 @@ export function SelectSlot() {
   return (
     <div>
       <Text weight="2" style={{ display: 'block', padding: '12px 16px' }}>
-        {service?.name ?? 'Выбор времени'}
+        {service?.name ?? 'Select a time'}
       </Text>
 
       <div style={{ padding: '0 16px' }}>
@@ -96,6 +96,16 @@ export function SelectSlot() {
                       onClick={day.enabled ? () => setSelectedDate(day.date) : undefined}
                       style={{
                         justifyContent: 'center',
+                        // Every day cell gets the same explicit box regardless of
+                        // digit count (1 vs 31) or selected state — without this,
+                        // a <button>'s intrinsic content-based sizing can make cells
+                        // drift out of alignment with their grid column/row, which
+                        // read as "the backing behind the date shifted" on a real
+                        // device even though the grid gap itself was already uniform.
+                        width: '100%',
+                        height: 40,
+                        boxSizing: 'border-box',
+                        padding: 0,
                         // Component="button" (added for keyboard accessibility) makes
                         // this a real <button>, which on iOS Safari picks up the
                         // system's default button chrome (a filled gray face, plus
@@ -133,9 +143,9 @@ export function SelectSlot() {
         ))}
       </div>
 
-      <Section header="Свободное время">
+      <Section header="Available times">
         {slots?.length === 0 ? (
-          <Placeholder description="Нет свободных слотов на эту дату" />
+          <Placeholder description="No available slots for this date" />
         ) : (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: '0 16px 16px' }}>
             {slots?.map((slot) => {

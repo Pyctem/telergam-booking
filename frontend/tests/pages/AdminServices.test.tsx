@@ -25,10 +25,10 @@ describe('AdminServices', () => {
 
     await waitFor(() => expect(screen.getByText('Haircut')).toBeInTheDocument());
 
-    fireEvent.change(screen.getByLabelText(/название/i), { target: { value: 'Beard trim' } });
-    fireEvent.change(screen.getByLabelText(/цена/i), { target: { value: '800' } });
-    fireEvent.change(screen.getByLabelText(/длительность/i), { target: { value: '20' } });
-    fireEvent.click(screen.getByRole('button', { name: /добавить/i }));
+    fireEvent.change(screen.getByLabelText(/name/i), { target: { value: 'Beard trim' } });
+    fireEvent.change(screen.getByLabelText(/price/i), { target: { value: '800' } });
+    fireEvent.change(screen.getByLabelText(/duration/i), { target: { value: '20' } });
+    fireEvent.click(screen.getByRole('button', { name: /add/i }));
 
     await waitFor(() =>
       expect(createMock).toHaveBeenCalledWith({ name: 'Beard trim', price: 800, durationMinutes: 20 })

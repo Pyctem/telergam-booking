@@ -13,14 +13,14 @@ export function AdminLayout() {
   // could redirect an actual admin to "/" during a retry-backoff window where
   // isLoading is already false but `me` hasn't arrived yet, since me?.role would
   // read as undefined ("not admin") instead of "still finding out".
-  if (isPending) return <p>Загрузка...</p>;
+  if (isPending) return <p>Loading...</p>;
   if (me?.role !== 'admin') return <Navigate to="/" replace />;
 
   return (
     <div>
       <nav>
-        <button onClick={() => setTab('bookings')}>Записи на день</button>
-        <button onClick={() => setTab('services')}>Услуги</button>
+        <button onClick={() => setTab('bookings')}>Today's Bookings</button>
+        <button onClick={() => setTab('services')}>Services</button>
       </nav>
       {tab === 'bookings' ? <AdminBookings /> : <AdminServices />}
     </div>

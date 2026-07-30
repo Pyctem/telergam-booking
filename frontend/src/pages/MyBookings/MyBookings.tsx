@@ -21,7 +21,7 @@ export function MyBookings() {
 
   if (settingsPending || !settings) {
     return (
-      <Placeholder header="Загрузка...">
+      <Placeholder header="Loading...">
         <Spinner size="m" />
       </Placeholder>
     );
@@ -29,23 +29,23 @@ export function MyBookings() {
 
   return (
     <List>
-      <Section header="Мои записи">
+      <Section header="My Bookings">
         {bookings?.map((booking) => {
           const dt = DateTime.fromISO(booking.startsAt).setZone(settings.timezone);
           const isConfirmed = booking.status === 'confirmed';
           return (
             <Cell
               key={booking.id}
-              subtitle={`${dt.toFormat('dd.MM.yyyy')} в ${dt.toFormat('HH:mm')}`}
+              subtitle={`${dt.toFormat('dd.MM.yyyy')} at ${dt.toFormat('HH:mm')}`}
               after={
                 <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <Badge type="dot" mode={isConfirmed ? 'primary' : 'gray'} />
-                    <Caption weight="2">{isConfirmed ? 'Подтверждена' : 'Отменена'}</Caption>
+                    <Caption weight="2">{isConfirmed ? 'Confirmed' : 'Cancelled'}</Caption>
                   </span>
                   {isConfirmed && (
                     <Button size="s" mode="outline" onClick={() => cancelMutation.mutate(booking.id)}>
-                      Отменить
+                      Cancel
                     </Button>
                   )}
                 </span>

@@ -48,8 +48,8 @@ describe('AdminLayout', () => {
 
     renderAdmin();
 
-    await waitFor(() => expect(screen.getByText('Записи на день')).toBeInTheDocument());
-    expect(screen.getByRole('button', { name: 'Услуги' })).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText("Today's Bookings")).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: 'Services' })).toBeInTheDocument();
     expect(screen.queryByText('Home screen')).not.toBeInTheDocument();
   });
 
@@ -66,21 +66,21 @@ describe('AdminLayout', () => {
   // the test would pass under both the correct and the buggy code — proving
   // nothing.)
   //
-  // Under the current source (`if (isPending) return <p>Загрузка...</p>;`)
+  // Under the current source (`if (isPending) return <p>Loading...</p>;`)
   // this renders the loading state and never evaluates
   // `me?.role !== 'admin'`. If AdminLayout were reverted to checking
   // `isLoading` instead, this exact state (isPending: true, isLoading:
   // false) would skip the loading return and hit
   // `me?.role !== 'admin'` with `me === undefined`, which reads as `true`
   // ("not admin") and would flash-redirect a real admin to "/" — which this
-  // test would catch as "Home screen" rendering instead of "Загрузка...".
+  // test would catch as "Home screen" rendering instead of "Loading...".
   it('shows the loading state, not a premature redirect, while no data has arrived and isLoading is already false (isPending regression)', async () => {
     onlineManager.setOnline(false);
     const getWhoAmIMock = vi.spyOn(userApi, 'getWhoAmI').mockImplementation(() => new Promise(() => {}));
 
     renderAdmin();
 
-    await waitFor(() => expect(screen.getByText('Загрузка...')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('Loading...')).toBeInTheDocument());
     expect(screen.queryByText('Home screen')).not.toBeInTheDocument();
     // While offline/paused, react-query never even calls the queryFn.
     expect(getWhoAmIMock).not.toHaveBeenCalled();

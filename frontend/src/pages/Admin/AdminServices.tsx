@@ -31,28 +31,28 @@ export function AdminServices() {
 
   return (
     <div>
-      <h2>Услуги</h2>
+      <h2>Services</h2>
       <ul>
         {services?.map((service) => (
           <li key={service.id}>
-            <span>{service.name}</span> — {service.price} ₽, {service.durationMinutes} мин
-            {service.isActive && <button onClick={() => deleteMutation.mutate(service.id)}>Удалить</button>}
+            <span>{service.name}</span> — {service.price} ₽, {service.durationMinutes} min
+            {service.isActive && <button onClick={() => deleteMutation.mutate(service.id)}>Delete</button>}
           </li>
         ))}
       </ul>
       <form onSubmit={handleSubmit}>
-        <label htmlFor="service-name">Название</label>
+        <label htmlFor="service-name">Name</label>
         <input id="service-name" value={name} onChange={(e) => setName(e.target.value)} />
-        <label htmlFor="service-price">Цена</label>
+        <label htmlFor="service-price">Price</label>
         <input id="service-price" type="number" value={price} onChange={(e) => setPrice(e.target.value)} />
-        <label htmlFor="service-duration">Длительность</label>
+        <label htmlFor="service-duration">Duration</label>
         <input
           id="service-duration"
           type="number"
           value={durationMinutes}
           onChange={(e) => setDurationMinutes(e.target.value)}
         />
-        <button type="submit">Добавить</button>
+        <button type="submit">Add</button>
       </form>
     </div>
   );
