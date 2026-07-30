@@ -33,7 +33,7 @@ export function SelectSlot() {
   const { data: services } = useQuery({ queryKey: ['services'], queryFn: getServices });
   const service = services?.find((s) => s.id === Number(serviceId));
 
-  const { data: slots } = useQuery({
+  const { data: slots = [], isPending: slotsPending } = useQuery({
     queryKey: ['slots', serviceId, selectedDate],
     queryFn: () => getSlots(Number(serviceId), selectedDate!),
     enabled: Boolean(serviceId) && selectedDate !== null,
@@ -144,11 +144,15 @@ export function SelectSlot() {
       </div>
 
       <Section header="Available times">
-        {slots?.length === 0 ? (
+        {slotsPending ? (
+          <Placeholder>
+            <Spinner size="s" />
+          </Placeholder>
+        ) : slots.length === 0 ? (
           <Placeholder description="No available slots for this date" />
         ) : (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: 16 }}>
-            {slots?.map((slot) => {
+            {slots.map((slot) => {
               const label = DateTime.fromISO(slot.startsAt).setZone(settings!.timezone).toFormat('HH:mm');
               return (
                 <Chip
