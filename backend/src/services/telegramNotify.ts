@@ -2,8 +2,8 @@ import { DateTime } from 'luxon';
 import { config } from '../config.js';
 import type { Booking } from '../types.js';
 
-function formatBookingText(booking: Booking): string {
-  const dt = DateTime.fromISO(booking.startsAt).setZone('Europe/Moscow');
+function formatBookingText(booking: Booking, timezone: string): string {
+  const dt = DateTime.fromISO(booking.startsAt).setZone(timezone);
   return `${booking.serviceName}, ${dt.toFormat('dd.MM.yyyy')} в ${dt.toFormat('HH:mm')}`;
 }
 
@@ -22,10 +22,13 @@ async function sendTelegramMessage(chatId: number, text: string): Promise<void> 
 export async function notifyBookingCreated(
   booking: Booking,
   clientTelegramId: number,
-  ownerChatId: number | null
+  ownerChatId: number | null,
+  timezone: string,
+  clientName: string | null
 ): Promise<void> {
-  await sendTelegramMessage(clientTelegramId, `Вы записаны на ${formatBookingText(booking)}`);
+  await sendTelegramMessage(clientTelegramId, `Вы записаны на ${formatBookingText(booking, timezone)}`);
   if (ownerChatId !== null) {
-    await sendTelegramMessage(ownerChatId, `Новая запись: ${formatBookingText(booking)}`);
+    const name = clientName ?? 'Клиент';
+    await sendTelegramMessage(ownerChatId, `Новая запись: ${name}, ${formatBookingText(booking, timezone)}`);
   }
 }
