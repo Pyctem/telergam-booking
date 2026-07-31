@@ -10,7 +10,17 @@
 
 body {
   margin: 0;
-  background: var(--tg-theme-bg-color);
+  /* Secondary (not primary) bg color — telegram-ui's Section/List cards render
+     on --tgui--bg_color (mapped from --tg-theme-bg-color) and rely on the page
+     behind them being a *different* shade for contrast. On iOS specifically,
+     Input has no border at all in its default state (confirmed by reading the
+     installed @telegram-apps/telegram-ui package's compiled CSS) — it depends
+     entirely on this page/card contrast to be visible. Using bg-color here
+     made every Section (and every Input inside one) blend into the page on
+     iOS, e.g. the Name/Price/Duration fields on the admin Add-service form
+     were invisible except for a blinking caret.
+  */
+  background: var(--tg-theme-secondary-bg-color);
   color: var(--tg-theme-text-color);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
