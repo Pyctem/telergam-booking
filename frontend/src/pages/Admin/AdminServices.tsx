@@ -54,11 +54,30 @@ export function AdminServices() {
           </Cell>
         ))}
       </Section>
-      <Section>
-        <form onSubmit={handleSubmit}>
-          <Input header="Name" aria-label="Name" value={name} onChange={(e) => setName(e.target.value)} />
+      {/* <form> wraps the Section (not the other way around) so the three
+          Inputs are Section's own direct children — Section inserts a
+          visible Divider between direct children automatically, which is
+          what actually separates the fields. When the inputs were nested
+          inside a <form> that was Section's only child, Section saw one
+          child and drew no dividers, and since Input's own background
+          (--tgui--bg_color) is identical to Section's card background
+          (--tgui--section_bg_color) by default, the three fields visually
+          fused into one blank area on iOS. `placeholder` is also required
+          on every field: `header` only renders on the `base` platform (see
+          the Input usage note in AdminBookings.tsx), so iOS had no visible
+          hint of what each blank field was for. */}
+      <form onSubmit={handleSubmit}>
+        <Section>
+          <Input
+            header="Name"
+            placeholder="Name"
+            aria-label="Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
           <Input
             header="Price"
+            placeholder="Price"
             aria-label="Price"
             type="number"
             value={price}
@@ -66,18 +85,19 @@ export function AdminServices() {
           />
           <Input
             header="Duration"
+            placeholder="Duration"
             aria-label="Duration"
             type="number"
             value={durationMinutes}
             onChange={(e) => setDurationMinutes(e.target.value)}
           />
-          <div style={{ padding: '12px 24px' }}>
-            <Button type="submit" mode="filled" stretched>
-              Add
-            </Button>
-          </div>
-        </form>
-      </Section>
+        </Section>
+        <div style={{ padding: '12px 24px' }}>
+          <Button type="submit" mode="filled" stretched>
+            Add
+          </Button>
+        </div>
+      </form>
     </List>
   );
 }
