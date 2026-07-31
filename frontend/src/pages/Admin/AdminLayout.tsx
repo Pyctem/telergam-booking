@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { CSSProperties } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Navigate } from 'react-router-dom';
 import { Tabbar, Placeholder, Spinner } from '@telegram-apps/telegram-ui';
@@ -28,15 +29,33 @@ export function AdminLayout() {
       {/* Tabbar renders position:fixed to the viewport bottom (telegram-ui's
           Tabbar always uses FixedLayout's default vertical="bottom" and has
           no public prop to override it), so the content above it needs
-          bottom padding to avoid being covered. 72px is headroom above both
+          bottom padding to avoid being covered. 80px is headroom above both
           of telegram-ui's shipped platform heights for a text-only (no icon)
-          Tabbar.Item: "base" is `12px 16px 16px` padding + ~16px caption
-          line-height ≈ 44px; "ios" is `8px 12px 4px` padding + caption +
-          env(safe-area-inset-bottom), ≈62px worst case on a notched device. */}
-      <div style={{ paddingBottom: 72 }}>
+          Tabbar.Item at the enlarged 18px caption line-height set below:
+          "base" is `12px 16px 16px` padding + 18px line-height ≈ 46px; "ios"
+          is `8px 12px 4px` padding + 18px line-height + env(safe-area-inset-
+          bottom), ≈67px worst case on a notched device. */}
+      <div style={{ paddingBottom: 80 }}>
         {tab === 'bookings' ? <AdminBookings /> : <AdminServices />}
       </div>
-      <Tabbar>
+      <Tabbar
+        style={
+          {
+            // TabbarItem's label is a telegram-ui Caption, rendered at
+            // caption2 (11px) on iOS and caption1 (13px) elsewhere — with no
+            // icon next to it (we don't have any), that reads as noticeably
+            // tiny, especially on iOS. These custom properties are the exact
+            // ones Caption's own CSS reads for font-size/line-height, so
+            // overriding them here (scoped to Tabbar, not app-wide) bumps
+            // both platforms to the same larger, legible size — same
+            // technique already used for the time-slot Chips in SelectSlot.
+            '--tgui--caption1--font_size': '14px',
+            '--tgui--caption1--line_height': '18px',
+            '--tgui--caption2--font_size': '14px',
+            '--tgui--caption2--line_height': '18px',
+          } as CSSProperties
+        }
+      >
         {/* "Bookings", not "Today's Bookings" — AdminBookings renders a
             Section with that exact header text below, and having the tab
             label duplicate it breaks getByText's uniqueness assumption in
