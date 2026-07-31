@@ -116,16 +116,33 @@ export function SelectSlot() {
                         // made the disabled day numbers nearly invisible on iPhone.
                         WebkitAppearance: 'none',
                         appearance: 'none',
-                        background: day.date === selectedDate ? undefined : 'transparent',
-                        // `mode="elevated"` (telegram-ui's own "selected" look) uses
-                        // --tgui--surface_primary, which in dark theme is nearly the
-                        // same lightness as the page background (~9% vs ~13%) — the
-                        // selected day was invisible against a dark background. Use
-                        // the Telegram button accent color instead: it's designed to
-                        // always contrast with both the light and dark theme backgrounds.
-                        ...(day.date === selectedDate
-                          ? { backgroundColor: 'var(--tg-theme-button-color)', color: 'var(--tg-theme-button-text-color)' }
-                          : {}),
+                        // Chip's `mode="outline"` border is a near-invisible
+                        // `box-shadow: 0 0 0 1px rgba(0,0,0,.05)` (telegram-ui's
+                        // own default) — on its own that's not enough to tell a
+                        // tappable day from a disabled one, especially now that
+                        // the page itself sits on --tg-theme-secondary-bg-color
+                        // (see theme.css). `backgroundColor` (not the `background`
+                        // shorthand) throughout, and always set — mixing the
+                        // shorthand and longhand across the selected/unselected
+                        // branches made React warn about a "conflicting property"
+                        // on rerender and risked stale styles.
+                        // - Selected: Telegram's button accent color. `mode="elevated"`
+                        //   (telegram-ui's own "selected" look) uses --tgui--surface_primary,
+                        //   which in dark theme is nearly the same lightness as the page
+                        //   background (~9% vs ~13%) and was invisible there — the accent
+                        //   color is designed to contrast with both themes.
+                        // - Enabled, unselected: an explicit --tg-theme-bg-color fill so
+                        //   it reads as a distinct "card" against the page, the same
+                        //   page-vs-card contrast pattern used everywhere else (Section,
+                        //   Input).
+                        // - Disabled: transparent, so it visually recedes into the page.
+                        backgroundColor:
+                          day.date === selectedDate
+                            ? 'var(--tg-theme-button-color)'
+                            : day.enabled
+                              ? 'var(--tg-theme-bg-color)'
+                              : 'transparent',
+                        ...(day.date === selectedDate ? { color: 'var(--tg-theme-button-text-color)' } : {}),
                         // Disabled (out-of-horizon) days: de-emphasize with Telegram's
                         // own "secondary text" color instead of `opacity`, which would
                         // dim an already-subtle outline chip into illegibility on a
@@ -185,7 +202,14 @@ export function SelectSlot() {
                     '--tgui--subheadline2--line_height': '16px',
                     WebkitAppearance: 'none',
                     appearance: 'none',
-                    background: 'transparent',
+                    // Same reasoning as the calendar day chips above: Chip's
+                    // `mode="outline"` border alone (a near-invisible 5%-opacity
+                    // box-shadow) isn't enough contrast against the page's
+                    // --tg-theme-secondary-bg-color background — give every
+                    // slot an explicit --tg-theme-bg-color fill so it reads as
+                    // a distinct, tappable "card". `backgroundColor`, not the
+                    // `background` shorthand — see the calendar chip comment.
+                    backgroundColor: 'var(--tg-theme-bg-color)',
                   } as CSSProperties}
                 >
                   {label}
