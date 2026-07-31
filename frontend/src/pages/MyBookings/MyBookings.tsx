@@ -1,17 +1,18 @@
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
-import { List, Section, Cell, Badge, Caption, Button, Placeholder, Spinner } from '@telegram-apps/telegram-ui';
+import { List, Section, Cell, Badge, Caption, Button } from '@telegram-apps/telegram-ui';
 import { getMyBookings, cancelBooking } from '../../api/bookings';
 import { useBackButton } from '../../hooks/useBackButton';
 import { useBusinessSettings } from '../../hooks/useBusinessSettings';
 import { useNavigate } from 'react-router-dom';
+import { SkeletonRows } from '../../components/SkeletonRows';
 
 export function MyBookings() {
   const navigate = useNavigate();
   useBackButton(() => navigate('/'));
 
   const queryClient = useQueryClient();
-  const { data: bookings } = useQuery({ queryKey: ['myBookings'], queryFn: getMyBookings });
+  const { data: bookings, isPending: bookingsPending } = useQuery({ queryKey: ['myBookings'], queryFn: getMyBookings });
   const { data: settings, isPending: settingsPending } = useBusinessSettings();
 
   const cancelMutation = useMutation({
@@ -21,9 +22,24 @@ export function MyBookings() {
 
   if (settingsPending || !settings) {
     return (
-      <Placeholder header="Loading...">
-        <Spinner size="m" />
-      </Placeholder>
+      <List>
+        <Section header="My Bookings">
+          <SkeletonRows label="Loading bookings" />
+        </Section>
+      </List>
+    );
+  }
+
+  // Settings and bookings load in parallel and don't always resolve
+  // together — without this, settings landing first left the section
+  // sitting empty (no skeleton, no data) until bookings caught up.
+  if (bookingsPending) {
+    return (
+      <List>
+        <Section header="My Bookings">
+          <SkeletonRows label="Loading bookings" />
+        </Section>
+      </List>
     );
   }
 

@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
-import { List, Section, Cell, Banner, Placeholder, Spinner } from '@telegram-apps/telegram-ui';
+import { List, Section, Cell, Banner } from '@telegram-apps/telegram-ui';
 import { getServices } from '../../api/services';
 import { createBooking } from '../../api/bookings';
 import { getWhoAmI } from '../../api/user';
@@ -11,6 +11,7 @@ import { useMainButton } from '../../hooks/useMainButton';
 import { useBackButton } from '../../hooks/useBackButton';
 import { useBusinessSettings } from '../../hooks/useBusinessSettings';
 import { formatDuration } from '../../lib/duration';
+import { SkeletonRows } from '../../components/SkeletonRows';
 
 export function Confirm() {
   const { serviceId } = useParams<{ serviceId: string }>();
@@ -66,9 +67,11 @@ export function Confirm() {
 
   if (!service || settingsPending || !settings) {
     return (
-      <Placeholder header="Loading...">
-        <Spinner size="m" />
-      </Placeholder>
+      <List>
+        <Section header="Booking">
+          <SkeletonRows count={3} label="Loading booking details" />
+        </Section>
+      </List>
     );
   }
 

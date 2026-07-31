@@ -3,7 +3,7 @@ import type { CSSProperties } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
-import { Section, Chip, Placeholder, Spinner, Text, Divider } from '@telegram-apps/telegram-ui';
+import { Section, Chip, Placeholder, Spinner, Text, Divider, Skeleton } from '@telegram-apps/telegram-ui';
 import { getServices } from '../../api/services';
 import { getSlots } from '../../api/slots';
 import { getMyBookings } from '../../api/bookings';
@@ -233,9 +233,23 @@ export function SelectSlot() {
 
       <Section header="Available times">
         {slotsPending ? (
-          <Placeholder>
-            <Spinner size="s" />
-          </Placeholder>
+          // Shaped like the real slot chips below (same size/gap/layout) so
+          // switching dates doesn't collapse the section down to a small
+          // centered spinner and then pop back out once slots arrive — the
+          // exact "jump" a skeleton is meant to avoid.
+          <div
+            role="status"
+            aria-label="Loading available times"
+            style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: 16 }}
+          >
+            {Array.from({ length: 6 }, (_, index) => (
+              <Skeleton key={index} visible>
+                <Chip mode="outline" style={{ width: 60, boxSizing: 'border-box', padding: '6px 4px' }}>
+                  00:00
+                </Chip>
+              </Skeleton>
+            ))}
+          </div>
         ) : slots.length === 0 ? (
           <Placeholder description="No available slots for this date" />
         ) : (

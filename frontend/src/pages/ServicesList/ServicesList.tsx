@@ -1,8 +1,19 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { List, Section, Cell, Placeholder, Spinner } from '@telegram-apps/telegram-ui';
+import { List, Section, Cell, Placeholder } from '@telegram-apps/telegram-ui';
 import { getServices } from '../../api/services';
 import { formatDuration } from '../../lib/duration';
+import { SkeletonRows } from '../../components/SkeletonRows';
+
+function MyBookingsLink() {
+  return (
+    <Section>
+      <Link to="/my-bookings" style={{ textDecoration: 'none', color: 'inherit' }}>
+        <Cell>My Bookings</Cell>
+      </Link>
+    </Section>
+  );
+}
 
 export function ServicesList() {
   const { data: services, isPending, error } = useQuery({ queryKey: ['services'], queryFn: getServices });
@@ -13,9 +24,12 @@ export function ServicesList() {
   // would then crash. isPending stays true for that whole window.
   if (isPending) {
     return (
-      <Placeholder header="Loading...">
-        <Spinner size="m" />
-      </Placeholder>
+      <List>
+        <Section header="Services">
+          <SkeletonRows label="Loading services" />
+        </Section>
+        <MyBookingsLink />
+      </List>
     );
   }
   if (error) {
@@ -35,11 +49,7 @@ export function ServicesList() {
           </Link>
         ))}
       </Section>
-      <Section>
-        <Link to="/my-bookings" style={{ textDecoration: 'none', color: 'inherit' }}>
-          <Cell>My Bookings</Cell>
-        </Link>
-      </Section>
+      <MyBookingsLink />
     </List>
   );
 }

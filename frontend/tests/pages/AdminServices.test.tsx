@@ -7,6 +7,17 @@ import { renderWithProviders } from '../testUtils';
 vi.mock('../../src/api/admin');
 
 describe('AdminServices', () => {
+  it('shows a skeleton for the list while services are loading, without blocking the form', async () => {
+    vi.spyOn(adminApi, 'getAdminServices').mockImplementation(() => new Promise(() => {}));
+
+    renderWithProviders(<AdminServices />);
+
+    expect(await screen.findByRole('status', { name: 'Loading services' })).toBeInTheDocument();
+    // The Add-service form doesn't depend on the services list, so it must
+    // stay usable while the list is still loading, not hidden behind it.
+    expect(screen.getByLabelText(/name/i)).toBeInTheDocument();
+  });
+
   it('lists services and creates a new one from the form', async () => {
     vi.spyOn(adminApi, 'getAdminServices').mockResolvedValue([
       { id: 1, name: 'Haircut', description: null, price: 1500, durationMinutes: 30, isActive: true },

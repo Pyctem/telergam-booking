@@ -45,7 +45,7 @@ describe('ServicesList', () => {
   // isFetching/isLoading true forever and would pass under either flag,
   // proving nothing).
   //
-  // Under the current source (`if (isPending) return <Placeholder header="Loading...">...`)
+  // Under the current source (`if (isPending) return <List>...<SkeletonRows>...`)
   // this renders the loading state and never reaches `services.map(...)`.
   // If ServicesList were reverted to checking `isLoading` instead, this
   // exact state (isPending: true, isLoading: false) would skip the loading
@@ -61,7 +61,7 @@ describe('ServicesList', () => {
 
     renderWithProviders(<ServicesList />, { queryClient });
 
-    await waitFor(() => expect(screen.getByText('Loading...')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('status', { name: 'Loading services' })).toBeInTheDocument());
     // While offline/paused, react-query never even calls the queryFn.
     expect(getServicesMock).not.toHaveBeenCalled();
 

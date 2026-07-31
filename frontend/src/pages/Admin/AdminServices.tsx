@@ -3,10 +3,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { List, Section, Cell, Input, Button } from '@telegram-apps/telegram-ui';
 import { getAdminServices, createAdminService, deleteAdminService } from '../../api/admin';
 import { formatDuration } from '../../lib/duration';
+import { SkeletonRows } from '../../components/SkeletonRows';
 
 export function AdminServices() {
   const queryClient = useQueryClient();
-  const { data: services } = useQuery({ queryKey: ['adminServices'], queryFn: getAdminServices });
+  const { data: services, isPending: servicesPending } = useQuery({
+    queryKey: ['adminServices'],
+    queryFn: getAdminServices,
+  });
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   // Entered in hours (e.g. "1.5"), converted to whole minutes on submit —
@@ -53,28 +57,32 @@ export function AdminServices() {
           switches to this tab (same reasoning as the Bookings tab rename in
           AdminLayout). */}
       <Section header="All Services">
-        {activeServices?.map((service) => {
-          const isDeleting = deleteMutation.isPending && deleteMutation.variables === service.id;
-          return (
-            <Cell
-              key={service.id}
-              subtitle={`${service.price} ₽ · ${formatDuration(service.durationMinutes)}`}
-              after={
-                <Button
-                  size="s"
-                  mode="outline"
-                  loading={isDeleting}
-                  disabled={isDeleting}
-                  onClick={() => deleteMutation.mutate(service.id)}
-                >
-                  Delete
-                </Button>
-              }
-            >
-              {service.name}
-            </Cell>
-          );
-        })}
+        {servicesPending ? (
+          <SkeletonRows label="Loading services" />
+        ) : (
+          activeServices?.map((service) => {
+            const isDeleting = deleteMutation.isPending && deleteMutation.variables === service.id;
+            return (
+              <Cell
+                key={service.id}
+                subtitle={`${service.price} ₽ · ${formatDuration(service.durationMinutes)}`}
+                after={
+                  <Button
+                    size="s"
+                    mode="outline"
+                    loading={isDeleting}
+                    disabled={isDeleting}
+                    onClick={() => deleteMutation.mutate(service.id)}
+                  >
+                    Delete
+                  </Button>
+                }
+              >
+                {service.name}
+              </Cell>
+            );
+          })
+        )}
       </Section>
       {/* <form> wraps the Section (not the other way around) so the three
           Inputs are Section's own direct children — Section inserts a

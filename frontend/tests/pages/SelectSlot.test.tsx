@@ -95,6 +95,22 @@ describe('SelectSlot', () => {
     await waitFor(() => expect(screen.getByText('Confirm screen')).toBeInTheDocument());
   });
 
+  it('shows a skeleton in the slots section while slots are loading, not the empty-state placeholder', async () => {
+    vi.spyOn(servicesApi, 'getServices').mockResolvedValue([
+      { id: 1, name: 'Haircut', description: null, price: 1500, durationMinutes: 30, isActive: true },
+    ]);
+    vi.spyOn(slotsApi, 'getSlots').mockImplementation(() => new Promise(() => {}));
+    vi.spyOn(settingsApi, 'getSettings').mockResolvedValue({ timezone: 'Europe/Moscow', bookingHorizonDays: 3 });
+    const queryClient = new QueryClient();
+
+    renderWithProviders(routedSelectSlot(), { queryClient, initialEntries: ['/booking/1'] });
+
+    await waitFor(() =>
+      expect(screen.getByRole('status', { name: 'Loading available times' })).toBeInTheDocument()
+    );
+    expect(screen.queryByText('No available slots for this date')).not.toBeInTheDocument();
+  });
+
   it('does not render a stray divider in the slots Section when slots are available', async () => {
     // Regression test for a bug where `<Section>{cond && <Placeholder/>}<div>...</div></Section>`
     // always passed Section exactly two "child slots" even when the first

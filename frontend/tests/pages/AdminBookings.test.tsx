@@ -39,6 +39,36 @@ describe('AdminBookings', () => {
     await waitFor(() => expect(screen.getByText('No bookings for this date')).toBeInTheDocument());
   });
 
+  it('shows a skeleton (not a stale empty-state flash) while a newly selected date is loading', async () => {
+    vi.spyOn(settingsApi, 'getSettings').mockResolvedValue({ timezone: 'Europe/Moscow', bookingHorizonDays: 14 });
+    let resolveSecondFetch!: (bookings: unknown[]) => void;
+    vi.spyOn(adminApi, 'getAdminBookings')
+      .mockResolvedValueOnce([])
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveSecondFetch = resolve;
+          })
+      );
+
+    renderWithProviders(<AdminBookings />);
+
+    await waitFor(() => expect(screen.getByText('No bookings for this date')).toBeInTheDocument());
+
+    fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-08-15' } });
+
+    // `date` is part of the query key, so picking a new date restarts
+    // isPending: true for that key — regression coverage for the bug where
+    // this went unhandled and briefly re-showed the previous date's
+    // "no bookings" message instead of a loading state.
+    await waitFor(() => expect(screen.getByRole('status', { name: 'Loading bookings' })).toBeInTheDocument());
+    expect(screen.queryByText('No bookings for this date')).not.toBeInTheDocument();
+
+    resolveSecondFetch([]);
+
+    await waitFor(() => expect(screen.getByText('No bookings for this date')).toBeInTheDocument());
+  });
+
   it('refetches bookings for the newly selected date', async () => {
     vi.spyOn(settingsApi, 'getSettings').mockResolvedValue({ timezone: 'Europe/Moscow', bookingHorizonDays: 14 });
     const getAdminBookingsMock = vi.spyOn(adminApi, 'getAdminBookings').mockResolvedValue([]);
