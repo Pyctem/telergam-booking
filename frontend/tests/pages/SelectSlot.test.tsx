@@ -7,6 +7,7 @@ import { SelectSlot } from '../../src/pages/BookingFlow/SelectSlot';
 import * as slotsApi from '../../src/api/slots';
 import * as servicesApi from '../../src/api/services';
 import * as settingsApi from '../../src/api/settings';
+import * as bookingsApi from '../../src/api/bookings';
 import { renderWithProviders } from '../testUtils';
 
 function availableFn<T extends (...args: never[]) => unknown>(impl?: T) {
@@ -17,6 +18,7 @@ function availableFn<T extends (...args: never[]) => unknown>(impl?: T) {
 vi.mock('../../src/api/slots');
 vi.mock('../../src/api/services');
 vi.mock('../../src/api/settings');
+vi.mock('../../src/api/bookings');
 vi.mock('@telegram-apps/sdk-react', () => ({
   mainButton: {
     mount: availableFn(),
@@ -58,6 +60,11 @@ const FIXED_NOW = '2099-06-01T00:00:00.000+03:00';
 
 beforeEach(() => {
   Settings.now = () => new Date(FIXED_NOW).valueOf();
+  // Default to no bookings — react-query throws if a queryFn resolves to
+  // undefined, which is what the auto-mocked getMyBookings would otherwise
+  // return in every test that doesn't care about the booked-day dot and so
+  // doesn't spy it itself.
+  vi.spyOn(bookingsApi, 'getMyBookings').mockResolvedValue([]);
 });
 
 afterEach(() => {
@@ -301,5 +308,53 @@ describe('SelectSlot', () => {
     // The unselected chip must NOT carry the accent background — otherwise
     // every day would look "selected".
     expect(unselectedChip.style.backgroundColor).not.toBe('var(--tg-theme-button-color)');
+  });
+
+  it('marks a day with a dot only when the client has a confirmed booking for this same service', async () => {
+    vi.spyOn(servicesApi, 'getServices').mockResolvedValue([
+      { id: 1, name: 'Haircut', description: null, price: 1500, durationMinutes: 30, isActive: true },
+    ]);
+    vi.spyOn(slotsApi, 'getSlots').mockResolvedValue([]);
+    vi.spyOn(settingsApi, 'getSettings').mockResolvedValue({ timezone: 'Europe/Moscow', bookingHorizonDays: 3 });
+    vi.spyOn(bookingsApi, 'getMyBookings').mockResolvedValue([
+      // Confirmed, this service (id 1), June 1 — should get a dot.
+      {
+        id: 1, userId: 1, serviceId: 1, serviceName: 'Haircut',
+        startsAt: '2099-06-01T09:00:00.000Z', endsAt: '2099-06-01T09:30:00.000Z',
+        status: 'confirmed', createdAt: '2099-05-01T00:00:00.000Z',
+      },
+      // Confirmed, but a different service, June 2 — must not get a dot.
+      {
+        id: 2, userId: 1, serviceId: 2, serviceName: 'Beard trim',
+        startsAt: '2099-06-02T09:00:00.000Z', endsAt: '2099-06-02T09:30:00.000Z',
+        status: 'confirmed', createdAt: '2099-05-01T00:00:00.000Z',
+      },
+      // This service, but cancelled, June 3 — must not get a dot.
+      {
+        id: 3, userId: 1, serviceId: 1, serviceName: 'Haircut',
+        startsAt: '2099-06-03T09:00:00.000Z', endsAt: '2099-06-03T09:30:00.000Z',
+        status: 'cancelled', createdAt: '2099-05-01T00:00:00.000Z',
+      },
+    ]);
+    const queryClient = new QueryClient();
+
+    const { container } = renderWithProviders(routedSelectSlot(), {
+      queryClient,
+      initialEntries: ['/booking/1'],
+    });
+
+    await waitFor(() => expect(screen.getByText('No available slots for this date')).toBeInTheDocument());
+
+    const dots = container.querySelectorAll('[aria-label="You have a booking on this day"]');
+    expect(dots).toHaveLength(1);
+
+    const dayOneChip = screen.getByText('1').closest('button')!;
+    expect(dayOneChip.querySelector('[aria-label="You have a booking on this day"]')).not.toBeNull();
+
+    const dayTwoChip = screen.getByText('2').closest('button')!;
+    expect(dayTwoChip.querySelector('[aria-label="You have a booking on this day"]')).toBeNull();
+
+    const dayThreeChip = screen.getByText('3').closest('button')!;
+    expect(dayThreeChip.querySelector('[aria-label="You have a booking on this day"]')).toBeNull();
   });
 });

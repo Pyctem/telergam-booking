@@ -6,6 +6,7 @@ import { DateTime } from 'luxon';
 import { Section, Chip, Placeholder, Spinner, Text, Divider } from '@telegram-apps/telegram-ui';
 import { getServices } from '../../api/services';
 import { getSlots } from '../../api/slots';
+import { getMyBookings } from '../../api/bookings';
 import { useBackButton } from '../../hooks/useBackButton';
 import { useBusinessSettings } from '../../hooks/useBusinessSettings';
 import { generateCalendarMonths } from '../../lib/calendarGrid';
@@ -45,6 +46,25 @@ export function SelectSlot() {
     const today = DateTime.now().setZone(settings.timezone).toISODate()!;
     return generateCalendarMonths(today, settings.bookingHorizonDays);
   }, [settings]);
+
+  // Same queryKey MyBookings.tsx uses, so both screens share one cached
+  // fetch instead of issuing a duplicate request.
+  const { data: myBookings } = useQuery({ queryKey: ['myBookings'], queryFn: getMyBookings });
+
+  // Dates (in the business's timezone) the client already has a confirmed
+  // booking for THIS service — marked in the calendar so they don't
+  // accidentally double-book the same service on a day they're already
+  // scheduled. Deliberately scoped to this service only, not every booking
+  // the client has, since a day booked for a different service isn't
+  // relevant context while picking a date for this one.
+  const bookedDates = useMemo(() => {
+    if (!myBookings || !settings) return new Set<string>();
+    return new Set(
+      myBookings
+        .filter((booking) => booking.status === 'confirmed' && booking.serviceId === Number(serviceId))
+        .map((booking) => DateTime.fromISO(booking.startsAt).setZone(settings.timezone).toISODate()!)
+    );
+  }, [myBookings, settings, serviceId]);
 
   function pickSlot(startsAt: string) {
     navigate(`/booking/${serviceId}/confirm?startsAt=${encodeURIComponent(startsAt)}`);
@@ -177,7 +197,31 @@ export function SelectSlot() {
                         } as CSSProperties
                       }
                     >
-                      {DateTime.fromISO(day.date).day}
+                      {/* Chip renders its children inside a Subheadline (an
+                          <h6>), so this nested flex column becomes that
+                          heading's content — fine structurally, matches how
+                          the text-color overrides above already reach
+                          through it. */}
+                      <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                        <span>{DateTime.fromISO(day.date).day}</span>
+                        {bookedDates.has(day.date) && (
+                          <span
+                            aria-label="You have a booking on this day"
+                            style={{
+                              width: 4,
+                              height: 4,
+                              borderRadius: '50%',
+                              // White dot on the accent-blue selected background,
+                              // accent-blue dot everywhere else — same contrast
+                              // pairing already used for the day number itself.
+                              backgroundColor:
+                                day.date === selectedDate
+                                  ? 'var(--tg-theme-button-text-color)'
+                                  : 'var(--tg-theme-button-color)',
+                            }}
+                          />
+                        )}
+                      </span>
                     </Chip>
                   )
                 )}
