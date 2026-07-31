@@ -2,13 +2,17 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { List, Section, Cell, Input, Button } from '@telegram-apps/telegram-ui';
 import { getAdminServices, createAdminService, deleteAdminService } from '../../api/admin';
+import { formatDuration } from '../../lib/duration';
 
 export function AdminServices() {
   const queryClient = useQueryClient();
   const { data: services } = useQuery({ queryKey: ['adminServices'], queryFn: getAdminServices });
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
-  const [durationMinutes, setDurationMinutes] = useState('');
+  // Entered in hours (e.g. "1.5"), converted to whole minutes on submit —
+  // the API's durationMinutes field is unchanged, this is purely an input
+  // convenience since staff think in hours, not raw minute counts.
+  const [durationHours, setDurationHours] = useState('');
 
   const createMutation = useMutation({
     mutationFn: (input: { name: string; price: number; durationMinutes: number }) => createAdminService(input),
@@ -16,7 +20,7 @@ export function AdminServices() {
       queryClient.invalidateQueries({ queryKey: ['adminServices'] });
       setName('');
       setPrice('');
-      setDurationMinutes('');
+      setDurationHours('');
     },
   });
 
@@ -25,9 +29,11 @@ export function AdminServices() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['adminServices'] }),
   });
 
+  const durationMinutes = Math.round(Number(durationHours) * 60);
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    createMutation.mutate({ name, price: Number(price), durationMinutes: Number(durationMinutes) });
+    createMutation.mutate({ name, price: Number(price), durationMinutes });
   }
 
   // "Delete" is a soft-delete on the backend (sets is_active = false; the
@@ -37,7 +43,7 @@ export function AdminServices() {
   // list instead of just losing its Delete button.
   const activeServices = services?.filter((service) => service.isActive);
 
-  const isFormValid = name.trim() !== '' && Number(price) > 0 && Number(durationMinutes) > 0;
+  const isFormValid = name.trim() !== '' && Number(price) > 0 && durationMinutes > 0;
 
   return (
     <List>
@@ -52,7 +58,7 @@ export function AdminServices() {
           return (
             <Cell
               key={service.id}
-              subtitle={`${service.price} ₽ · ${service.durationMinutes} min`}
+              subtitle={`${service.price} ₽ · ${formatDuration(service.durationMinutes)}`}
               after={
                 <Button
                   size="s"
@@ -100,12 +106,13 @@ export function AdminServices() {
             onChange={(e) => setPrice(e.target.value)}
           />
           <Input
-            header="Duration"
-            placeholder="Duration"
-            aria-label="Duration"
+            header="Duration (hours)"
+            placeholder="e.g. 1.5"
+            aria-label="Duration (hours)"
             type="number"
-            value={durationMinutes}
-            onChange={(e) => setDurationMinutes(e.target.value)}
+            step="0.5"
+            value={durationHours}
+            onChange={(e) => setDurationHours(e.target.value)}
           />
         </Section>
         <div style={{ padding: '12px 24px' }}>

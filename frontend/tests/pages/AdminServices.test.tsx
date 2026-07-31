@@ -19,11 +19,13 @@ describe('AdminServices', () => {
 
     fireEvent.change(screen.getByLabelText(/name/i), { target: { value: 'Beard trim' } });
     fireEvent.change(screen.getByLabelText(/price/i), { target: { value: '800' } });
-    fireEvent.change(screen.getByLabelText(/duration/i), { target: { value: '20' } });
+    // Duration is entered in hours (1.5 = 1h30m) and converted to whole
+    // minutes before hitting the API, which still stores durationMinutes.
+    fireEvent.change(screen.getByLabelText(/duration/i), { target: { value: '1.5' } });
     fireEvent.click(screen.getByRole('button', { name: /add/i }));
 
     await waitFor(() =>
-      expect(createMock).toHaveBeenCalledWith({ name: 'Beard trim', price: 800, durationMinutes: 20 })
+      expect(createMock).toHaveBeenCalledWith({ name: 'Beard trim', price: 800, durationMinutes: 90 })
     );
   });
 
@@ -94,7 +96,7 @@ describe('AdminServices', () => {
     fireEvent.change(screen.getByLabelText(/price/i), { target: { value: '800' } });
     expect(addButton).toBeDisabled();
 
-    fireEvent.change(screen.getByLabelText(/duration/i), { target: { value: '20' } });
+    fireEvent.change(screen.getByLabelText(/duration/i), { target: { value: '1' } });
     expect(addButton).not.toBeDisabled();
   });
 });

@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { List, Section, Cell, Placeholder, Spinner } from '@telegram-apps/telegram-ui';
 import { getServices } from '../../api/services';
+import { formatDuration } from '../../lib/duration';
 
 export function ServicesList() {
   const { data: services, isPending, error } = useQuery({ queryKey: ['services'], queryFn: getServices });
@@ -30,7 +31,7 @@ export function ServicesList() {
             to={`/booking/${service.id}`}
             style={{ textDecoration: 'none', color: 'inherit' }}
           >
-            <Cell subtitle={`${service.price} ₽ · ${service.durationMinutes} min`}>{service.name}</Cell>
+            <Cell subtitle={`${service.price} ₽ · ${formatDuration(service.durationMinutes)}`}>{service.name}</Cell>
           </Link>
         ))}
       </Section>

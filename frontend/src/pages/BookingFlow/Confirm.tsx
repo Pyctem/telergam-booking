@@ -10,6 +10,7 @@ import { ApiError } from '../../api/client';
 import { useMainButton } from '../../hooks/useMainButton';
 import { useBackButton } from '../../hooks/useBackButton';
 import { useBusinessSettings } from '../../hooks/useBusinessSettings';
+import { formatDuration } from '../../lib/duration';
 
 export function Confirm() {
   const { serviceId } = useParams<{ serviceId: string }>();
@@ -81,7 +82,7 @@ export function Confirm() {
   const detailCells = [
     me?.firstName && <Cell key="name" subtitle="Booking for">{me.firstName}</Cell>,
     <Cell key="datetime" subtitle="Date & time">{`${dt.toFormat('dd.MM.yyyy')} at ${dt.toFormat('HH:mm')}`}</Cell>,
-    <Cell key="price" subtitle="Price">{`${service.price} ₽ · ${service.durationMinutes} min`}</Cell>,
+    <Cell key="price" subtitle="Price">{`${service.price} ₽ · ${formatDuration(service.durationMinutes)}`}</Cell>,
   ].filter((cell): cell is JSX.Element => Boolean(cell));
 
   return (
