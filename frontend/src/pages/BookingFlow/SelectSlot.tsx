@@ -3,7 +3,7 @@ import type { CSSProperties } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
-import { Section, Chip, Placeholder, Spinner, Text } from '@telegram-apps/telegram-ui';
+import { Section, Chip, Placeholder, Spinner, Text, Divider } from '@telegram-apps/telegram-ui';
 import { getServices } from '../../api/services';
 import { getSlots } from '../../api/slots';
 import { useBackButton } from '../../hooks/useBackButton';
@@ -65,8 +65,13 @@ export function SelectSlot() {
       </Text>
 
       <div style={{ padding: '0 16px' }}>
-        {months.map((month) => (
+        {months.map((month, monthIndex) => (
           <div key={month.monthISO} style={{ marginBottom: 8 }}>
+            {/* A second (or third) month only appears when the booking horizon
+                crosses a month boundary — without a clear break, its grid ran
+                right into the previous month's last week with just a small
+                margin, reading as one continuous, confusing block of numbers. */}
+            {monthIndex > 0 && <Divider style={{ margin: '24px 0 20px' }} />}
             <Text weight="2" style={{ display: 'block', margin: '8px 0 4px', fontSize: 14 }}>
               {month.monthLabel}
             </Text>
