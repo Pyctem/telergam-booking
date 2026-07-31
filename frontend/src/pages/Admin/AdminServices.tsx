@@ -32,11 +32,16 @@ export function AdminServices() {
 
   return (
     <List>
-      <Section header="Services">
+      {/* "All Services", not "Services" — AdminLayout's Tabbar item for this
+          tab is labeled "Services", and having this Section header duplicate
+          it breaks getByText's uniqueness assumption for any test that
+          switches to this tab (same reasoning as the Bookings tab rename in
+          AdminLayout). */}
+      <Section header="All Services">
         {services?.map((service) => (
           <Cell
             key={service.id}
-            subtitle={`${service.price} ₽, ${service.durationMinutes} min`}
+            subtitle={`${service.price} ₽ · ${service.durationMinutes} min`}
             after={
               service.isActive ? (
                 <Button size="s" mode="outline" onClick={() => deleteMutation.mutate(service.id)}>

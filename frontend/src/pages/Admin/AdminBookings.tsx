@@ -33,26 +33,35 @@ export function AdminBookings() {
     );
   }
 
+  // Built as a filtered array (instead of `{cond && <Placeholder/>}` inline
+  // among siblings) because Section inserts a Divider between children using
+  // Children.map/Children.count, which counts a bare `false` as a child
+  // slot — that would render a stray divider whenever the empty-state
+  // Placeholder doesn't render (i.e. whenever there are 1+ bookings, or
+  // while `bookings` is still undefined during the initial fetch).
+  const sectionChildren = [
+    <Input
+      key="date"
+      type="date"
+      header="Date"
+      aria-label="Date"
+      value={date}
+      onChange={(e) => setDate(e.target.value)}
+    />,
+    bookings?.length === 0 && <Placeholder key="empty" description="No bookings for this date" />,
+    ...(bookings?.map((booking) => (
+      <Cell
+        key={booking.id}
+        subtitle={DateTime.fromISO(booking.startsAt).setZone(settings.timezone).toFormat('HH:mm')}
+      >
+        {`${booking.clientFirstName ?? booking.clientUsername ?? '—'} · ${booking.serviceName}`}
+      </Cell>
+    )) ?? []),
+  ].filter((cell): cell is JSX.Element => Boolean(cell));
+
   return (
     <List>
-      <Section header="Today's Bookings">
-        <Input
-          type="date"
-          header="Date"
-          aria-label="Date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-        />
-        {bookings?.length === 0 && <Placeholder description="No bookings for this date" />}
-        {bookings?.map((booking) => (
-          <Cell
-            key={booking.id}
-            subtitle={DateTime.fromISO(booking.startsAt).setZone(settings.timezone).toFormat('HH:mm')}
-          >
-            {`${booking.clientFirstName ?? booking.clientUsername ?? '—'} · ${booking.serviceName}`}
-          </Cell>
-        ))}
-      </Section>
+      <Section header="Today's Bookings">{sectionChildren}</Section>
     </List>
   );
 }

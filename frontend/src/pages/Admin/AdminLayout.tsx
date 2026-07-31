@@ -28,9 +28,11 @@ export function AdminLayout() {
       {/* Tabbar renders position:fixed to the viewport bottom (telegram-ui's
           Tabbar always uses FixedLayout's default vertical="bottom" and has
           no public prop to override it), so the content above it needs
-          bottom padding to avoid being covered. 72px is an estimate for a
-          text-only (no icon) Tabbar.Item — confirm/adjust against the real
-          rendered height during Task 4's manual browser check. */}
+          bottom padding to avoid being covered. 72px is headroom above both
+          of telegram-ui's shipped platform heights for a text-only (no icon)
+          Tabbar.Item: "base" is `12px 16px 16px` padding + ~16px caption
+          line-height ≈ 44px; "ios" is `8px 12px 4px` padding + caption +
+          env(safe-area-inset-bottom), ≈62px worst case on a notched device. */}
       <div style={{ paddingBottom: 72 }}>
         {tab === 'bookings' ? <AdminBookings /> : <AdminServices />}
       </div>
