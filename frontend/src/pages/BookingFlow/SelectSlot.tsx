@@ -95,61 +95,82 @@ export function SelectSlot() {
                       aria-disabled={!day.enabled}
                       disabled={!day.enabled}
                       onClick={day.enabled ? () => setSelectedDate(day.date) : undefined}
-                      style={{
-                        justifyContent: 'center',
-                        // Every day cell gets the same explicit box regardless of
-                        // digit count (1 vs 31) or selected state — without this,
-                        // a <button>'s intrinsic content-based sizing can make cells
-                        // drift out of alignment with their grid column/row, which
-                        // read as "the backing behind the date shifted" on a real
-                        // device even though the grid gap itself was already uniform.
-                        width: '100%',
-                        height: 40,
-                        boxSizing: 'border-box',
-                        padding: 0,
-                        // Component="button" (added for keyboard accessibility) makes
-                        // this a real <button>, which on iOS Safari picks up the
-                        // system's default button chrome (a filled gray face, plus
-                        // its own low-contrast text dimming on :disabled) UNLESS the
-                        // native appearance is explicitly reset — that native styling
-                        // was fighting telegram-ui's own "outline"/disabled look and
-                        // made the disabled day numbers nearly invisible on iPhone.
-                        WebkitAppearance: 'none',
-                        appearance: 'none',
-                        // Chip's `mode="outline"` border is a near-invisible
-                        // `box-shadow: 0 0 0 1px rgba(0,0,0,.05)` (telegram-ui's
-                        // own default) — on its own that's not enough to tell a
-                        // tappable day from a disabled one, especially now that
-                        // the page itself sits on --tg-theme-secondary-bg-color
-                        // (see theme.css). `backgroundColor` (not the `background`
-                        // shorthand) throughout, and always set — mixing the
-                        // shorthand and longhand across the selected/unselected
-                        // branches made React warn about a "conflicting property"
-                        // on rerender and risked stale styles.
-                        // - Selected: Telegram's button accent color. `mode="elevated"`
-                        //   (telegram-ui's own "selected" look) uses --tgui--surface_primary,
-                        //   which in dark theme is nearly the same lightness as the page
-                        //   background (~9% vs ~13%) and was invisible there — the accent
-                        //   color is designed to contrast with both themes.
-                        // - Enabled, unselected: an explicit --tg-theme-bg-color fill so
-                        //   it reads as a distinct "card" against the page, the same
-                        //   page-vs-card contrast pattern used everywhere else (Section,
-                        //   Input).
-                        // - Disabled: transparent, so it visually recedes into the page.
-                        backgroundColor:
-                          day.date === selectedDate
-                            ? 'var(--tg-theme-button-color)'
-                            : day.enabled
-                              ? 'var(--tg-theme-bg-color)'
-                              : 'transparent',
-                        ...(day.date === selectedDate ? { color: 'var(--tg-theme-button-text-color)' } : {}),
-                        // Disabled (out-of-horizon) days: de-emphasize with Telegram's
-                        // own "secondary text" color instead of `opacity`, which would
-                        // dim an already-subtle outline chip into illegibility on a
-                        // dark background (see the iOS native-button note above — this
-                        // combined with that to make disabled numbers unreadable).
-                        ...(day.enabled ? {} : { color: 'var(--tg-theme-hint-color)', pointerEvents: 'none' }),
-                      }}
+                      style={
+                        {
+                          justifyContent: 'center',
+                          // Every day cell gets the same explicit box regardless of
+                          // digit count (1 vs 31) or selected state — without this,
+                          // a <button>'s intrinsic content-based sizing can make cells
+                          // drift out of alignment with their grid column/row, which
+                          // read as "the backing behind the date shifted" on a real
+                          // device even though the grid gap itself was already uniform.
+                          width: '100%',
+                          height: 40,
+                          boxSizing: 'border-box',
+                          padding: 0,
+                          // Component="button" (added for keyboard accessibility) makes
+                          // this a real <button>, which on iOS Safari picks up the
+                          // system's default button chrome (a filled gray face, plus
+                          // its own low-contrast text dimming on :disabled) UNLESS the
+                          // native appearance is explicitly reset — that native styling
+                          // was fighting telegram-ui's own "outline"/disabled look and
+                          // made the disabled day numbers nearly invisible on iPhone.
+                          WebkitAppearance: 'none',
+                          appearance: 'none',
+                          // Chip's `mode="outline"` border is a near-invisible
+                          // `box-shadow: 0 0 0 1px rgba(0,0,0,.05)` (telegram-ui's
+                          // own default) — on its own that's not enough to tell a
+                          // tappable day from a disabled one, especially now that
+                          // the page itself sits on --tg-theme-secondary-bg-color
+                          // (see theme.css). `backgroundColor` (not the `background`
+                          // shorthand) throughout, and always set — mixing the
+                          // shorthand and longhand across the selected/unselected
+                          // branches made React warn about a "conflicting property"
+                          // on rerender and risked stale styles.
+                          // - Selected: Telegram's button accent color. `mode="elevated"`
+                          //   (telegram-ui's own "selected" look) uses --tgui--surface_primary,
+                          //   which in dark theme is nearly the same lightness as the page
+                          //   background (~9% vs ~13%) and was invisible there — the accent
+                          //   color is designed to contrast with both themes.
+                          // - Enabled, unselected: an explicit --tg-theme-bg-color fill so
+                          //   it reads as a distinct "card" against the page, the same
+                          //   page-vs-card contrast pattern used everywhere else (Section,
+                          //   Input).
+                          // - Disabled: --tgui--outline, a barely-there theme-aware overlay
+                          //   (5% black in light theme, 10% white in dark), so the cell
+                          //   reads as "here, but not tappable" instead of fusing invisibly
+                          //   into the page like fully transparent did.
+                          backgroundColor:
+                            day.date === selectedDate
+                              ? 'var(--tg-theme-button-color)'
+                              : day.enabled
+                                ? 'var(--tg-theme-bg-color)'
+                                : 'var(--tgui--outline)',
+                          // The chip's label renders through telegram-ui's Subheadline,
+                          // whose own CSS sets `color: var(--tgui--plain_foreground)`
+                          // directly on that element — an inherited `color` set here on
+                          // the outer button is not enough, that explicit rule on the
+                          // descendant wins regardless (this is exactly why an earlier
+                          // attempt at `color: var(--tg-theme-button-text-color)` here had
+                          // no visible effect: black-on-blue on the selected day). Override
+                          // the custom property itself instead — Subheadline's `var(...)`
+                          // then resolves to whatever we set here, since custom properties
+                          // inherit down through the tree.
+                          ...(day.date === selectedDate
+                            ? { '--tgui--plain_foreground': 'var(--tg-theme-button-text-color)' }
+                            : {}),
+                          // Disabled (out-of-horizon) days: de-emphasize with Telegram's
+                          // own "secondary text" color instead of `opacity`, which would
+                          // dim an already-subtle outline chip into illegibility on a
+                          // dark background (see the iOS native-button note above — this
+                          // combined with that to make disabled numbers unreadable). Same
+                          // custom-property override as the selected state above, for the
+                          // same reason (a plain `color` here doesn't reach the label).
+                          ...(day.enabled
+                            ? {}
+                            : { '--tgui--plain_foreground': 'var(--tg-theme-hint-color)', pointerEvents: 'none' }),
+                        } as CSSProperties
+                      }
                     >
                       {DateTime.fromISO(day.date).day}
                     </Chip>

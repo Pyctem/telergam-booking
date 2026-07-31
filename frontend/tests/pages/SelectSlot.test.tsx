@@ -206,8 +206,16 @@ describe('SelectSlot', () => {
     // days must instead set an explicit, always-legible text color via
     // Telegram's own "hint" color, and must reset the native button
     // appearance so no browser default fights it.
+    //
+    // The color override is the --tgui--plain_foreground custom property,
+    // not a plain `color` — Chip's label renders through telegram-ui's
+    // Subheadline, which sets its own explicit `color: var(--tgui--plain_
+    // foreground)` on the label element itself. An inherited `color` set on
+    // the outer button never reaches it (a live-device report caught this:
+    // the equivalent "selected day" override below had no visible effect
+    // until it switched to the custom-property form too).
     const disabledStyle = (disabledDays[0] as HTMLElement).style;
-    expect(disabledStyle.color).toBe('var(--tg-theme-hint-color)');
+    expect(disabledStyle.getPropertyValue('--tgui--plain_foreground')).toBe('var(--tg-theme-hint-color)');
     expect(disabledStyle.opacity).toBe('');
     expect(disabledStyle.getPropertyValue('appearance')).toBe('none');
   });
@@ -267,6 +275,10 @@ describe('SelectSlot', () => {
     // (~9% vs ~13%), making the selected day invisible against a dark
     // background. The selected chip must instead use var(--tg-theme-button-color)
     // (and matching text color), which is designed to contrast with both themes.
+    // The text color must land as the --tgui--plain_foreground custom
+    // property, not a plain `color` — see the disabled-day regression test
+    // above for why: Chip's Subheadline label sets its own explicit color
+    // that a plain `color` on the outer button never reaches.
     vi.spyOn(servicesApi, 'getServices').mockResolvedValue([
       { id: 1, name: 'Haircut', description: null, price: 1500, durationMinutes: 30, isActive: true },
     ]);
@@ -285,7 +297,7 @@ describe('SelectSlot', () => {
     const unselectedChip = container.querySelector('[aria-pressed="false"]') as HTMLElement;
 
     expect(selectedChip.style.backgroundColor).toBe('var(--tg-theme-button-color)');
-    expect(selectedChip.style.color).toBe('var(--tg-theme-button-text-color)');
+    expect(selectedChip.style.getPropertyValue('--tgui--plain_foreground')).toBe('var(--tg-theme-button-text-color)');
     // The unselected chip must NOT carry the accent background — otherwise
     // every day would look "selected".
     expect(unselectedChip.style.backgroundColor).not.toBe('var(--tg-theme-button-color)');
