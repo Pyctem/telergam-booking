@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { List, Section, Cell, Input, Button } from '@telegram-apps/telegram-ui';
 import { getAdminServices, createAdminService, deleteAdminService } from '../../api/admin';
 
 export function AdminServices() {
@@ -30,30 +31,48 @@ export function AdminServices() {
   }
 
   return (
-    <div>
-      <h2>Services</h2>
-      <ul>
+    <List>
+      <Section header="Services">
         {services?.map((service) => (
-          <li key={service.id}>
-            <span>{service.name}</span> — {service.price} ₽, {service.durationMinutes} min
-            {service.isActive && <button onClick={() => deleteMutation.mutate(service.id)}>Delete</button>}
-          </li>
+          <Cell
+            key={service.id}
+            subtitle={`${service.price} ₽, ${service.durationMinutes} min`}
+            after={
+              service.isActive ? (
+                <Button size="s" mode="outline" onClick={() => deleteMutation.mutate(service.id)}>
+                  Delete
+                </Button>
+              ) : undefined
+            }
+          >
+            {service.name}
+          </Cell>
         ))}
-      </ul>
-      <form onSubmit={handleSubmit}>
-        <label htmlFor="service-name">Name</label>
-        <input id="service-name" value={name} onChange={(e) => setName(e.target.value)} />
-        <label htmlFor="service-price">Price</label>
-        <input id="service-price" type="number" value={price} onChange={(e) => setPrice(e.target.value)} />
-        <label htmlFor="service-duration">Duration</label>
-        <input
-          id="service-duration"
-          type="number"
-          value={durationMinutes}
-          onChange={(e) => setDurationMinutes(e.target.value)}
-        />
-        <button type="submit">Add</button>
-      </form>
-    </div>
+      </Section>
+      <Section>
+        <form onSubmit={handleSubmit}>
+          <Input header="Name" aria-label="Name" value={name} onChange={(e) => setName(e.target.value)} />
+          <Input
+            header="Price"
+            aria-label="Price"
+            type="number"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+          />
+          <Input
+            header="Duration"
+            aria-label="Duration"
+            type="number"
+            value={durationMinutes}
+            onChange={(e) => setDurationMinutes(e.target.value)}
+          />
+          <div style={{ padding: '12px 24px' }}>
+            <Button type="submit" mode="filled" stretched>
+              Add
+            </Button>
+          </div>
+        </form>
+      </Section>
+    </List>
   );
 }
