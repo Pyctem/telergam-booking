@@ -30,6 +30,15 @@ export function AdminServices() {
     createMutation.mutate({ name, price: Number(price), durationMinutes: Number(durationMinutes) });
   }
 
+  // "Delete" is a soft-delete on the backend (sets is_active = false; the
+  // row stays in the table since bookings still reference it by id) and the
+  // admin GET endpoint deliberately returns every row, active or not. Filter
+  // to active-only here so a deleted service actually disappears from the
+  // list instead of just losing its Delete button.
+  const activeServices = services?.filter((service) => service.isActive);
+
+  const isFormValid = name.trim() !== '' && Number(price) > 0 && Number(durationMinutes) > 0;
+
   return (
     <List>
       {/* "All Services", not "Services" — AdminLayout's Tabbar item for this
@@ -38,21 +47,28 @@ export function AdminServices() {
           switches to this tab (same reasoning as the Bookings tab rename in
           AdminLayout). */}
       <Section header="All Services">
-        {services?.map((service) => (
-          <Cell
-            key={service.id}
-            subtitle={`${service.price} ₽ · ${service.durationMinutes} min`}
-            after={
-              service.isActive ? (
-                <Button size="s" mode="outline" onClick={() => deleteMutation.mutate(service.id)}>
+        {activeServices?.map((service) => {
+          const isDeleting = deleteMutation.isPending && deleteMutation.variables === service.id;
+          return (
+            <Cell
+              key={service.id}
+              subtitle={`${service.price} ₽ · ${service.durationMinutes} min`}
+              after={
+                <Button
+                  size="s"
+                  mode="outline"
+                  loading={isDeleting}
+                  disabled={isDeleting}
+                  onClick={() => deleteMutation.mutate(service.id)}
+                >
                   Delete
                 </Button>
-              ) : undefined
-            }
-          >
-            {service.name}
-          </Cell>
-        ))}
+              }
+            >
+              {service.name}
+            </Cell>
+          );
+        })}
       </Section>
       {/* <form> wraps the Section (not the other way around) so the three
           Inputs are Section's own direct children — Section inserts a
@@ -93,7 +109,13 @@ export function AdminServices() {
           />
         </Section>
         <div style={{ padding: '12px 24px' }}>
-          <Button type="submit" mode="filled" stretched>
+          <Button
+            type="submit"
+            mode="filled"
+            stretched
+            loading={createMutation.isPending}
+            disabled={!isFormValid || createMutation.isPending}
+          >
             Add
           </Button>
         </div>

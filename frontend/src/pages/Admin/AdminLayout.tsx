@@ -29,13 +29,17 @@ export function AdminLayout() {
       {/* Tabbar renders position:fixed to the viewport bottom (telegram-ui's
           Tabbar always uses FixedLayout's default vertical="bottom" and has
           no public prop to override it), so the content above it needs
-          bottom padding to avoid being covered. 90px is headroom above both
-          of telegram-ui's shipped platform heights for a text-only (no icon)
-          Tabbar.Item at the enlarged 26px caption line-height set below:
-          "base" is `12px 16px 16px` padding + 26px line-height ≈ 54px; "ios"
-          is `8px 12px 4px` padding + 26px line-height + env(safe-area-inset-
-          bottom), ≈72px worst case on a notched device. */}
-      <div style={{ paddingBottom: 90 }}>
+          bottom padding to avoid being covered. 120px is headroom above the
+          worst-case height once both the enlarged 26px caption line-height
+          and the enlarged per-item padding below are accounted for: 20px +
+          24px vertical padding + 26px line-height ≈ 70px, plus up to ~34px
+          of env(safe-area-inset-bottom) on a notched iPhone ≈ 104px. The
+          item's own padding is a plain (non-custom-property) value in
+          telegram-ui's CSS, so it can only be changed via an inline `style`
+          override on each Tabbar.Item (inline style always wins over any
+          class rule, on every platform) rather than the CSS-variable trick
+          used for the caption size below. */}
+      <div style={{ paddingBottom: 120 }}>
         {tab === 'bookings' ? <AdminBookings /> : <AdminServices />}
       </div>
       <Tabbar
@@ -61,8 +65,18 @@ export function AdminLayout() {
             Section with that exact header text below, and having the tab
             label duplicate it breaks getByText's uniqueness assumption in
             tests (and reads as redundant to a sighted user regardless). */}
-        <Tabbar.Item text="Bookings" selected={tab === 'bookings'} onClick={() => setTab('bookings')} />
-        <Tabbar.Item text="Services" selected={tab === 'services'} onClick={() => setTab('services')} />
+        <Tabbar.Item
+          text="Bookings"
+          selected={tab === 'bookings'}
+          onClick={() => setTab('bookings')}
+          style={{ padding: '20px 16px 24px' }}
+        />
+        <Tabbar.Item
+          text="Services"
+          selected={tab === 'services'}
+          onClick={() => setTab('services')}
+          style={{ padding: '20px 16px 24px' }}
+        />
       </Tabbar>
     </div>
   );
